@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.6
+- **Versão:** 0.7
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -183,7 +183,7 @@ Quando chega ao sistema escolhido:
 
 Cada recurso possui uma barra horizontal segmentada de 0 a 10. Cada segmento preenchido representa um Ponto de Colônia dedicado à extração daquele recurso. O nível aplicado determina quanto do potencial natural do recurso é aproveitado.
 
-Os Pontos de Colônia podem ser redistribuídos entre os planetas e recursos do sistema. A produção resultante combina:
+Os Pontos de Colônia podem ser redistribuídos imediatamente e sem custo entre os planetas e recursos do mesmo sistema. Eles nunca podem ser retirados ou transferidos para outra estrela. A produção resultante combina:
 
 - Potencial natural do planeta.
 - Pontos de Colônia aplicados ao recurso.
