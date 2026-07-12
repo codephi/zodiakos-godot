@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.9
+- **Versão:** 0.10
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -229,9 +229,20 @@ Reordenar a fila não remove o progresso dos projetos. Cancelar é uma ação se
 
 Na demo, a troca de modo é imediata. Nenhum progresso industrial acontece em segundo plano enquanto outro modo estiver ativo.
 
-O nível do sistema melhora sua capacidade de extração e libera produção industrial, bélica, colonizadora e outros recursos estratégicos. O avanço de nível ocupa a fila industrial como qualquer outro projeto.
+### 6.5 Evolução do sistema solar
 
-### 6.5 Unidades operacionais iniciais
+Subir o nível de um sistema exige quatro componentes complementares:
+
+1. **Ciência:** desbloqueia a tecnologia necessária para que sistemas da civilização alcancem o próximo nível.
+2. **Créditos e materiais:** pagam o custo econômico e os recursos estratégicos do projeto.
+3. **Produção Industrial:** executa o upgrade na fila local usando a Força de Trabalho do sistema.
+4. **Influência Cultural:** pode ser gasta opcionalmente para acelerar parte do progresso restante.
+
+Ciência e Cultura não substituem os Créditos, materiais ou tempo industrial. Se o sistema sair do modo Produção Industrial, o upgrade pausa e preserva seu progresso como qualquer outro projeto da fila.
+
+O bônus territorial do Zodíaco também se aplica à velocidade do projeto. Ao concluir a evolução, o sistema melhora sua capacidade de extração e pode liberar estruturas, defesas, naves, produção bélica, produção colonizadora e outros recursos estratégicos.
+
+### 6.6 Unidades operacionais iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
 - **Guarda:** patrulha pontos do Zodíaco, reage a invasões e participa da quebra de elos inimigos.
