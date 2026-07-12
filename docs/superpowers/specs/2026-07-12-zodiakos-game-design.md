@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.1
+- **Versão:** 0.2
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -19,11 +19,11 @@ A fantasia central é transformar uma pequena presença espacial em uma rede int
 
 ### 2.1 Território visível
 
-O domínio de uma civilização é representado diretamente no mapa. Estrelas conectadas formam rotas; rotas fechadas demarcam zonas; zonas válidas produzem recursos e sustentam a expansão.
+O domínio de uma civilização é representado diretamente no mapa. Estrelas conectadas formam rotas; rotas fechadas demarcam zonas; zonas válidas aceleram produção, movimento e outras ações dentro de suas fronteiras.
 
-### 2.2 Comando indireto
+### 2.2 Ordens por nave
 
-O jogador não controla cada unidade manualmente. Ele cria ligações, define destinos, escolhe produções, estabelece prioridades e ordena expansões ou ataques. Operários, guardas, colonizadores e outras unidades executam essas decisões automaticamente.
+O jogador define o que cada nave deve fazer, qual estrela ou território será seu alvo e por quais estrelas ela passará. Ele desenha a rota ao arrastar uma linha imaginária entre estrelas. A nave executa a ordem e percorre a rota automaticamente, sem pilotagem direta.
 
 ### 2.3 Logística antes da força bruta
 
@@ -58,13 +58,14 @@ Jogadores humanos e agentes controlados por LLM utilizam a mesma camada de coman
 A direção central é uma estratégia territorial e logística em tempo real:
 
 1. Observar a região conhecida e identificar oportunidades.
-2. Explorar novas estrelas e pontos de ligação.
-3. Criar ligações e fechar uma zona válida.
-4. Gerar, transportar e armazenar produção.
-5. Investir o estoque em estruturas, demarcadores e unidades.
-6. Expandir a rede, defender rotas ou atacar um território rival.
-7. Pontuar, desbloquear conquistas e receber novos desafios.
-8. Repetir o ciclo em escala crescente, sem reiniciar o universo.
+2. Selecionar uma nave e definir sua ação e seu alvo.
+3. Desenhar a rota da nave entre estrelas conhecidas.
+4. Explorar, coletar recursos, dominar uma estrela, defender ou atacar.
+5. Conectar estrelas dominadas e fechar uma zona válida.
+6. Usar os bônus territoriais para acelerar produção, transporte e expansão.
+7. Investir o estoque em estruturas, ligações e novas naves.
+8. Pontuar, desbloquear conquistas e receber novos desafios.
+9. Repetir o ciclo em escala crescente, sem reiniciar o universo.
 
 O principal domínio do jogador não é a velocidade de clicar, mas a capacidade de construir uma rede eficiente, antecipar ameaças e selecionar prioridades.
 
@@ -108,17 +109,36 @@ O protótipo visual estabelece os seguintes elementos conceituais:
 - **Base de produção:** destino operacional para recursos transportados.
 - **Estoque de produção:** reserva usada para criar novos demarcadores e outros elementos.
 - **Laboratório:** estrutura que desbloqueia esquemas de produção.
-- **Zona:** área delimitada por ligações pertencentes a uma civilização.
+- **Zona:** área delimitada por ligações pertencentes a uma civilização, formada por pelo menos três estrelas.
 
-Uma zona só produz quando sua geometria é válida e não sobrepõe outra zona. A produção percorre a rede até um estoque ou base designada. Distâncias e interrupções nas ligações afetam a eficiência logística.
+Qualquer estrela controlada permite capturar seus recursos na velocidade básica de 1x. Quando o jogador conecta de ponta a ponta pelo menos três estrelas dominadas e fecha um polígono válido, ele captura a área interna e ativa os bônus territoriais.
 
-### 6.1 Unidades iniciais
+Dentro de uma zona íntegra:
+
+- Recursos são capturados a 3x.
+- Naves se movimentam a 3x.
+- Exploração e demais ações territoriais são executadas a 3x.
+- Estrelas neutras são dominadas a 3x.
+
+A produção percorre a rede até um estoque ou base designada. Distâncias e interrupções nas ligações afetam a eficiência logística.
+
+### 6.1 Comandos e rotas
+
+O jogador emite ordens individualmente para cada nave. Uma ordem contém:
+
+- A ação: explorar o mapa, prospectar um território, coletar um recurso, dominar, defender ou atacar.
+- A estrela ou o território-alvo.
+- Uma rota desenhada entre estrelas.
+
+Cada linha arrastada entre duas estrelas define um trecho do percurso. Vários trechos podem formar uma rota maior. A nave segue os pontos definidos até concluir a ação, ser redirecionada ou encontrar uma interrupção válida.
+
+### 6.2 Unidades iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
 - **Guarda:** patrulha pontos da zona, reage a invasões e participa da quebra de elos inimigos.
 - **Colonizador:** consolida a ocupação de estrelas e territórios conquistados.
 
-Essas unidades são autônomas. O jogador define função, prioridade e destino; o sistema decide o deslocamento válido dentro da rede.
+Essas unidades executam suas tarefas automaticamente, mas cada nave recebe do jogador uma ação, um alvo e uma rota. O sistema valida e realiza o deslocamento dentro da rede.
 
 ## 7. Conflito e conquista
 
@@ -130,7 +150,27 @@ O conflito acontece sobre a rede territorial:
 4. A quantidade de guardas influencia a velocidade ou a pressão da conquista.
 5. Um upgrade pode permitir que guardas capturem operários e colonizadores encontrados durante o deslocamento.
 
-O protótipo também propõe cerco territorial: uma zona cercada pode tentar iniciar uma nova zona no ponto livre mais próximo fora do cerco. A conquista de um ponto estrutural pode destruir a zona que dependia dele. Os números, tempos e condições exatas serão tratados na especificação de combate, sem bloquear o primeiro protótipo do ciclo territorial.
+### 7.1 Cerco por fechamento de área
+
+Estrelas neutras ou inimigas dentro de uma zona não mudam de dono automaticamente. O fechamento cria vantagens para conquistá-las:
+
+- Estrelas neutras são dominadas a 3x.
+- Contra uma estrela inimiga cercada, o proprietário da zona recebe vantagem de ataque ou conquista de 5x.
+- Outros jogadores da mesma Aliança recebem vantagem de 2x contra essa estrela.
+- A estrela inimiga continua pertencendo ao adversário até a conclusão da conquista.
+
+Os modificadores de 5x e 2x são as regras específicas para conquistar estrelas inimigas cercadas; o bônus territorial geral permanece em 3x para movimento, recursos e outras ações.
+
+### 7.2 Ruptura da zona
+
+A zona só concede vantagens enquanto sua borda permanecer completamente fechada. Se uma estrela da borda for conquistada ou uma de suas ligações for rompida:
+
+- A zona é desativada imediatamente.
+- Produção, movimento e ações retornam à velocidade aplicável fora da zona.
+- Estrelas neutras perdem o bônus de captura.
+- Estrelas inimigas deixam de sofrer as vulnerabilidades de 5x e 2x.
+
+O protótipo também propõe que uma zona cercada possa tentar iniciar uma nova zona no ponto livre mais próximo fora do cerco. Os números, tempos e condições exatas serão tratados na especificação de combate, sem bloquear o primeiro protótipo do ciclo territorial.
 
 ## 8. Agentes controlados por LLM
 
@@ -252,7 +292,8 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 - Save e retomada do mesmo universo.
 - Simulação em tempo real com pausa e sem aceleração.
 - Câmera e elementos 3D sobre um único plano de jogo.
-- Criação de ligações e zonas.
+- Ordens individuais e rotas desenhadas entre estrelas.
+- Criação de ligações e zonas com pelo menos três estrelas.
 - Produção, transporte e estoque.
 - Operário, guarda e colonizador.
 - Expansão, defesa e conquista territorial básica.
@@ -276,13 +317,16 @@ A demo cumpre seu objetivo quando permite:
 
 1. Criar um universo, fechá-lo e retomá-lo sem perder o estado.
 2. Compreender visualmente pontos, ligações, zonas e fronteiras.
-3. Fechar uma primeira zona produtiva.
-4. Ver um operário transportar produção até uma base ou estoque.
-5. Investir a produção em expansão ou unidades.
-6. Observar um adversário LLM explorar e expandir usando comandos válidos.
-7. Defender uma ligação ou quebrar um elo adversário.
-8. Conquistar uma estrela com colonizadores.
-9. Acumular pontuação e receber um novo desafio sem encerrar o universo.
+3. Capturar recursos de uma estrela isolada na velocidade básica.
+4. Definir uma ação e desenhar a rota de uma nave entre estrelas.
+5. Fechar uma zona com pelo menos três estrelas e observar os bônus de 3x.
+6. Ver um operário transportar produção até uma base ou estoque.
+7. Investir a produção em expansão ou unidades.
+8. Observar um adversário LLM explorar e expandir usando comandos válidos.
+9. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
+10. Defender uma ligação ou quebrar um elo adversário, removendo os bônus da zona.
+11. Conquistar uma estrela com colonizadores.
+12. Acumular pontuação e receber um novo desafio sem encerrar o universo.
 
 ## 15. Próximas especificações de design
 
