@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.4
+- **Versão:** 0.5
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -166,7 +166,6 @@ A interface deve indicar o alcance disponível durante o desenho da linha e most
 #### Sonda
 
 - É barata e lenta.
-- Não consome combustível.
 - Pode ser controlada remotamente e receber novas rotas.
 - Detecta estrelas, caminhos possíveis e sinais gerais de recursos ou atividade.
 - Não domina estrelas, coleta recursos, transporta carga ou combate.
@@ -177,12 +176,13 @@ Uma sonda transforma uma estrela catalogada em detectada, mas não realiza sua e
 #### Nave exploradora
 
 - É mais cara e rápida que uma sonda.
-- Consome combustível.
 - Pode receber capacidades e alcance especializados.
 - Revela informações detalhadas sobre recursos, riscos e possibilidades de domínio.
 - Pode estabelecer contato e interagir com estruturas ou eventos encontrados.
 
 Uma nave exploradora transforma uma estrela detectada em explorada. Se permanecer dentro do alcance de sensores, a estrela também fica monitorada.
+
+Sondas e naves não utilizam combustível consumível. Seus limites operacionais são definidos pelo alcance máximo das ligações, pela velocidade e pelas capacidades do perfil, evitando uma camada adicional de reabastecimento e manutenção.
 
 ### 6.3 Unidades operacionais iniciais
 
