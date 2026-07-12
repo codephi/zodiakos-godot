@@ -12,6 +12,7 @@ config_version=5
 
 config/name="Zodiakos"
 config/features=PackedStringArray("4.7")
+run/main_scene="res://scenes/demo/geometric_visual_demo.tscn"
 
 [display]
 
