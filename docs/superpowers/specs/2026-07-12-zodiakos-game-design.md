@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.3
+- **Versão:** 0.4
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -87,7 +87,32 @@ As referências astronômicas servem como inspiração visual e espacial; Zodiak
 
 Novas regiões são materializadas conforme a exploração avança. O universo percebido pode crescer continuamente sem exigir que todo o mapa seja carregado ou armazenado de uma vez.
 
-### 5.3 Origens de jogador
+### 5.3 Visibilidade e conhecimento
+
+O mapa separa a posição visível de uma estrela do conhecimento detalhado sobre ela. Isso permite apresentar um universo de escala praticamente infinita sem eliminar a exploração.
+
+Cada estrela pode estar em um dos seguintes estados para uma civilização:
+
+- **Catalogada:** sua posição e aparência geral são visíveis, mas recursos, estruturas e presença inimiga são desconhecidos.
+- **Detectada:** uma sonda, nave, colônia ou sensor revela tipo, conexões possíveis e sinais gerais de recursos ou atividade.
+- **Explorada:** uma nave exploradora realizou a análise detalhada e revelou recursos, riscos e possibilidades de domínio.
+- **Monitorada:** está dentro do alcance atual de sensores próprios ou aliados, permitindo acompanhar mudanças e movimentações em tempo real.
+
+As colônias criam áreas de sensores ao seu redor. Estrelas muito distantes continuam catalogadas, mas não fornecem informação atualizada. O mapa utiliza geração procedural por regiões e níveis de detalhe para não carregar o universo inteiro simultaneamente.
+
+Aliados podem compartilhar visão atual das regiões monitoradas. Quando uma Aliança é abandonada, o jogador preserva o último estado conhecido das áreas dos ex-aliados, mas deixa de receber atualizações. A interface mostra a idade dessa informação e indica que ela pode estar desatualizada.
+
+### 5.4 Modos de exploração
+
+Uma unidade exploratória pode receber:
+
+- Uma estrela específica como destino.
+- Uma direção geral para avançar.
+- Uma sequência de estrelas.
+- Exploração automática de uma fronteira desconhecida.
+- Exploração aleatória entre destinos válidos dentro de seu alcance operacional.
+
+### 5.5 Origens de jogador
 
 O produto online possui duas origens iniciais.
 
@@ -136,7 +161,30 @@ Toda ligação possui um alcance máximo. Uma linha que ultrapasse esse alcance 
 
 A interface deve indicar o alcance disponível durante o desenho da linha e mostrar claramente quando a estrela de destino está fora dele.
 
-### 6.2 Unidades iniciais
+### 6.2 Unidades de exploração
+
+#### Sonda
+
+- É barata e lenta.
+- Não consome combustível.
+- Pode ser controlada remotamente e receber novas rotas.
+- Detecta estrelas, caminhos possíveis e sinais gerais de recursos ou atividade.
+- Não domina estrelas, coleta recursos, transporta carga ou combate.
+- Não possui meios próprios de defesa.
+
+Uma sonda transforma uma estrela catalogada em detectada, mas não realiza sua exploração completa.
+
+#### Nave exploradora
+
+- É mais cara e rápida que uma sonda.
+- Consome combustível.
+- Pode receber capacidades e alcance especializados.
+- Revela informações detalhadas sobre recursos, riscos e possibilidades de domínio.
+- Pode estabelecer contato e interagir com estruturas ou eventos encontrados.
+
+Uma nave exploradora transforma uma estrela detectada em explorada. Se permanecer dentro do alcance de sensores, a estrela também fica monitorada.
+
+### 6.3 Unidades operacionais iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
 - **Guarda:** patrulha pontos da zona, reage a invasões e participa da quebra de elos inimigos.
@@ -305,6 +353,8 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 - Save e retomada do mesmo universo.
 - Simulação em tempo real com pausa e sem aceleração.
 - Câmera e elementos 3D sobre um único plano de jogo.
+- Estados de visibilidade catalogada, detectada, explorada e monitorada.
+- Sonda remota e nave exploradora com funções distintas.
 - Ordens individuais e rotas desenhadas entre estrelas.
 - Alcance máximo de ligação e expansão dessa capacidade por perfis especializados.
 - Criação de ligações e zonas com pelo menos três estrelas.
@@ -331,17 +381,19 @@ A demo cumpre seu objetivo quando permite:
 
 1. Criar um universo, fechá-lo e retomá-lo sem perder o estado.
 2. Compreender visualmente pontos, ligações, zonas e fronteiras.
-3. Capturar recursos de uma estrela isolada na velocidade básica.
-4. Definir uma ação e desenhar a rota de uma nave entre estrelas.
-5. Fechar uma zona com pelo menos três estrelas e observar os bônus de 3x.
-6. Ver um operário transportar produção até uma base ou estoque.
-7. Investir a produção em expansão ou unidades.
-8. Observar um adversário LLM explorar e expandir usando comandos válidos.
-9. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
-10. Perder um ponto de borda e observar a zona se reorganizar quando existir uma ligação substituta dentro do alcance.
-11. Romper uma zona sem ligação substituta válida e remover seus bônus.
-12. Conquistar uma estrela com colonizadores.
-13. Acumular pontuação e receber um novo desafio sem encerrar o universo.
+3. Enviar uma sonda e transformar uma estrela catalogada em detectada.
+4. Enviar uma nave exploradora e revelar as informações detalhadas da estrela.
+5. Capturar recursos de uma estrela isolada na velocidade básica.
+6. Definir uma ação e desenhar a rota de uma nave entre estrelas.
+7. Fechar uma zona com pelo menos três estrelas e observar os bônus de 3x.
+8. Ver um operário transportar produção até uma base ou estoque.
+9. Investir a produção em expansão ou unidades.
+10. Observar um adversário LLM explorar e expandir usando comandos válidos.
+11. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
+12. Perder um ponto de borda e observar a zona se reorganizar quando existir uma ligação substituta dentro do alcance.
+13. Romper uma zona sem ligação substituta válida e remover seus bônus.
+14. Conquistar uma estrela com colonizadores.
+15. Acumular pontuação e receber um novo desafio sem encerrar o universo.
 
 ## 15. Próximas especificações de design
 
