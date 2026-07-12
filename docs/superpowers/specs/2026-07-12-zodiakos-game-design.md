@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.10
+- **Versão:** 0.11
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -25,19 +25,23 @@ O domínio de uma civilização é representado diretamente no mapa. Estrelas co
 
 O jogador define o que cada nave deve fazer, qual estrela ou território será seu alvo e por quais estrelas ela passará. Ele desenha a rota ao arrastar uma linha imaginária entre estrelas. A nave executa a ordem e percorre a rota automaticamente, sem pilotagem direta.
 
-### 2.3 Logística antes da força bruta
+### 2.3 Custo e tempo
+
+Toda vantagem é equilibrada por custo, tempo ou ambos. Níveis maiores, mais velocidade, maior alcance, mais combate, mais defesa e maior capacidade exigem investimentos progressivamente maiores. O jogador escolhe entre agir cedo com unidades simples ou esperar por unidades mais poderosas.
+
+### 2.4 Logística antes da força bruta
 
 Produção só tem valor quando pode ser transportada, armazenada e aplicada. A forma da rede, a distância entre pontos e a proteção das rotas são tão importantes quanto o número de unidades militares.
 
-### 2.4 Geografia com consequência
+### 2.5 Geografia com consequência
 
 Exploração, contato, comércio, diplomacia, entrada em Alianças e guerra dependem de deslocamento pelo universo. A interface pode formalizar uma decisão, mas não elimina a distância física entre as civilizações.
 
-### 2.5 Universo contínuo
+### 2.6 Universo contínuo
 
 O progresso é persistente. A demo salva o universo localmente e congela sua simulação quando o jogo fecha. A versão online manterá o universo ativo nos servidores mesmo quando jogadores humanos estiverem ausentes.
 
-### 2.6 Humanos e agentes sob as mesmas regras
+### 2.7 Humanos e agentes sob as mesmas regras
 
 Jogadores humanos e agentes controlados por LLM utilizam a mesma camada de comandos estratégicos. A simulação resolve movimento, produção e combate por regras determinísticas; a LLM escolhe objetivos, prioridades e ações válidas, sem controlar a física a cada quadro.
 
@@ -57,16 +61,16 @@ Jogadores humanos e agentes controlados por LLM utilizam a mesma camada de coman
 
 A direção central é uma estratégia territorial e logística em tempo real:
 
-1. Arrastar o mapa estelar e identificar um sistema de interesse.
-2. Selecionar a estrela e enviar uma nave de pesquisa.
-3. Descobrir os planetas, tipos planetários e recursos do sistema.
-4. Enviar uma nave colonizadora para converter sua capacidade em Força de Trabalho.
-5. Distribuir a Força de Trabalho ou especializar o sistema.
-6. Conectar sistemas dominados e fechar um Zodíaco válido.
-7. Usar os bônus territoriais para acelerar produção, transporte e expansão.
-8. Investir o estoque em estruturas, ligações e novas naves.
-9. Defender, atacar, pontuar e receber novos desafios.
-10. Repetir o ciclo em escala crescente, sem reiniciar o universo.
+1. Arrastar o mapa e selecionar uma estrela controlada como origem.
+2. Selecionar qualquer estrela visível como destino.
+3. Escolher uma nave, uma ação e confirmar a rota e o tempo de chegada.
+4. Decidir entre sondar primeiro ou enviar diretamente colonização, guerra ou outra ação disponível.
+5. Acompanhar várias ordens que avançam simultaneamente em tempo real.
+6. Distribuir a Força de Trabalho ou especializar sistemas colonizados.
+7. Conectar sistemas dominados e fechar um Zodíaco válido.
+8. Usar os bônus territoriais para acelerar produção, transporte e expansão.
+9. Investir o estoque em estruturas, ligações e novas naves.
+10. Defender, atacar, pontuar e repetir o ciclo sem reiniciar o universo.
 
 O principal domínio do jogador não é a velocidade de clicar, mas a capacidade de construir uma rede eficiente, antecipar ameaças e selecionar prioridades.
 
@@ -94,13 +98,15 @@ O mapa estelar é a interface principal do jogo. O jogador arrasta a tela livrem
 
 O universo é materializado proceduralmente em blocos conforme o deslocamento e o nível de zoom. Estrelas distantes utilizam representações simplificadas, permitindo a sensação de continuidade sem carregar o mapa infinito de uma vez.
 
-Ver uma estrela não revela automaticamente seu sistema solar. Antes da pesquisa, o jogador conhece sua posição e aparência externa. Depois de enviar uma nave de pesquisa, passa a conhecer seus planetas, tipos planetários e recursos.
+Ver uma estrela não revela automaticamente seu sistema solar. Antes da sondagem, o jogador conhece sua posição e aparência externa. Depois de enviar uma nave de expedição, passa a conhecer seus planetas, tipos planetários e recursos.
+
+Qualquer estrela visível pode receber diretamente uma nave de expedição, colonização ou guerra. Sondar é uma escolha para reduzir a incerteza, não um pré-requisito para colonizar ou atacar.
 
 Aliados podem compartilhar informações atualizadas de seus territórios. Quando uma Aliança é abandonada, o jogador preserva o último estado conhecido das áreas dos ex-aliados, mas deixa de receber atualizações. A interface mostra a idade dessa informação e indica que ela pode estar desatualizada.
 
 ### 5.4 Modos de exploração
 
-Uma nave de pesquisa pode receber:
+Uma nave de expedição pode receber:
 
 - Uma estrela específica como destino.
 - Uma direção geral para avançar.
@@ -148,18 +154,23 @@ A produção percorre a rede até um estoque ou base designada. Distâncias e in
 O jogador emite ordens individualmente para cada nave. Uma ordem contém:
 
 - A ação: explorar o mapa, prospectar um território, coletar um recurso, dominar, defender ou atacar.
-- A estrela ou o território-alvo.
+- O sistema controlado de origem.
+- A estrela ou o território de destino.
+- A nave escolhida.
 - Uma rota desenhada entre estrelas.
+- O tempo estimado de chegada.
 
 Cada linha arrastada entre duas estrelas define um trecho do percurso. Vários trechos podem formar uma rota maior. A nave segue os pontos definidos até concluir a ação, ser redirecionada ou encontrar uma interrupção válida.
+
+Várias naves podem viajar e executar ordens simultaneamente. O tempo avança continuamente enquanto o jogo estiver aberto e não estiver pausado.
 
 Toda ligação possui um alcance máximo. Uma linha que ultrapasse esse alcance não pode ser confirmada. O jogador pode aumentar a capacidade de ligação ao desenvolver perfis especializados, como exploradores, mas nenhum aprimoramento elimina o limite de distância.
 
 A interface deve indicar o alcance disponível durante o desenho da linha e mostrar claramente quando a estrela de destino está fora dele.
 
-### 6.2 Nave de pesquisa
+### 6.2 Nave de expedição
 
-Ao selecionar uma estrela, o jogador pode enviar uma nave de pesquisa. Quando ela chega ao destino, revela:
+Ao selecionar uma estrela, o jogador pode enviar uma nave de expedição com a ordem `Sondar`. Quando ela chega ao destino, revela:
 
 - Quantidade de planetas do sistema.
 - Tipo de cada planeta.
@@ -167,13 +178,17 @@ Ao selecionar uma estrela, o jogador pode enviar uma nave de pesquisa. Quando el
 - Características e bônus próprios do sistema.
 - Possibilidades de colonização.
 
-A nave de pesquisa não utiliza combustível consumível. Seus limites operacionais são definidos pelo alcance máximo das ligações, pela velocidade e pelas capacidades de seu perfil.
+A nave de expedição é reutilizável, rápida e relativamente barata. Ela não utiliza combustível consumível. Seus limites operacionais são definidos pelo alcance máximo das ligações, pela velocidade e pelas capacidades de seu perfil.
 
 ### 6.3 Colonização e Força de Trabalho
 
-A nave colonizadora é mais cara que a nave de pesquisa. Cada unidade transporta uma capacidade limitada de colonização e consegue atender apenas uma quantidade máxima de planetas.
+A nave colonizadora nível 1 é acessível, mas mais lenta que a nave de expedição. Cada unidade transporta uma capacidade limitada de colonização e consegue atender apenas uma quantidade máxima de planetas.
+
+Ela pode ser enviada diretamente a um sistema não sondado. Ao chegar, revela as informações necessárias para estabelecer as colônias, mas o jogador assume o risco de ter investido tempo e recursos em um destino pouco valioso.
 
 O nível da nave colonizadora determina a quantidade de Força de Trabalho transportada. Como referência conceitual, uma nave de nível 3 pode chegar com 10 pontos; a tabela definitiva será definida durante o balanceamento da demo.
+
+Níveis maiores de nave colonizadora custam mais e demoram mais para ser construídos, em troca de maior Força de Trabalho e capacidade planetária.
 
 Quando chega ao sistema escolhido:
 
@@ -193,7 +208,7 @@ A Força de Trabalho pode ser redistribuída imediatamente e sem custo entre os 
 - Tecnologias e especializações da civilização.
 - Bônus territorial do Zodíaco.
 
-Ao clicar em um sistema pesquisado, o painel apresenta os planetas em linhas ou cartões, seus tipos, seus recursos e as barras de Força de Trabalho. O jogador usa esse painel para concentrar ou diversificar sua produção.
+Ao clicar em um sistema sondado ou colonizado, o painel apresenta os planetas em linhas ou cartões, seus tipos, seus recursos e as barras de Força de Trabalho. O jogador usa esse painel para concentrar ou diversificar sua produção.
 
 ### 6.4 Modos do sistema solar
 
@@ -242,11 +257,36 @@ Ciência e Cultura não substituem os Créditos, materiais ou tempo industrial. 
 
 O bônus territorial do Zodíaco também se aplica à velocidade do projeto. Ao concluir a evolução, o sistema melhora sua capacidade de extração e pode liberar estruturas, defesas, naves, produção bélica, produção colonizadora e outros recursos estratégicos.
 
-### 6.6 Unidades operacionais iniciais
+### 6.6 Balanceamento das naves
+
+Cada classe e nível de nave é definido por:
+
+- Custo de construção.
+- Tempo de construção.
+- Velocidade de viagem.
+- Alcance operacional.
+- Força de combate.
+- Força de defesa.
+- Capacidade específica da função.
+
+| Classe | Custo e construção | Velocidade | Função principal |
+|---|---|---|---|
+| Expedição | Baixos | Alta | Sondar sistemas e reduzir incerteza |
+| Colonizadora nível 1 | Acessíveis | Baixa | Converter-se em Força de Trabalho |
+| Colonizadora avançada | Crescentes | Baixa a média | Entregar mais Força de Trabalho e atender mais planetas |
+| Guerra | Altos | Próxima à nave de expedição | Atacar, defender e escoltar |
+
+Naves de guerra custam mais e demoram mais para ser construídas do que naves de expedição. Esse custo está na construção; enviar uma nave não cobra combustível nem tarifa adicional por viagem.
+
+Níveis maiores sempre aumentam custo e tempo, oferecendo melhorias em velocidade, alcance, combate, defesa ou capacidade da função.
+
+### 6.7 Classes e unidades iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
 - **Guarda:** patrulha pontos do Zodíaco, reage a invasões e participa da quebra de elos inimigos.
+- **Nave de expedição:** sonda sistemas rapidamente e permanece disponível depois da missão.
 - **Nave colonizadora:** transforma-se em Força de Trabalho e consolida a ocupação dos planetas de um sistema.
+- **Nave de guerra:** viaja em velocidade próxima à expedição e concentra força de combate e defesa.
 
 Essas unidades executam suas tarefas automaticamente, mas cada nave recebe do jogador uma ação, um alvo e uma rota. O sistema valida e realiza o deslocamento dentro da rede.
 
@@ -440,8 +480,9 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 - Simulação em tempo real com pausa e sem aceleração.
 - Câmera e elementos 3D sobre um único plano de jogo.
 - Mapa estelar procedural, contínuo e navegável por arraste.
-- Nave de pesquisa que revela planetas, tipos e recursos de um sistema.
+- Nave de expedição que sonda planetas, tipos e recursos de um sistema.
 - Nave colonizadora consumida e convertida em Força de Trabalho.
+- Nave de guerra mais cara, com velocidade próxima à expedição.
 - Painel do sistema com distribuição de 0 a 10 pontos por recurso.
 - Modos exclusivos de Extração, Cultura, Ciência e Produção Industrial.
 - Fila local para naves, defesas, estruturas, melhorias e evolução de nível.
@@ -472,9 +513,9 @@ A demo cumpre seu objetivo quando permite:
 
 1. Criar um universo, fechá-lo e retomá-lo sem perder o estado.
 2. Arrastar e ampliar o mapa para visualizar regiões procedurais.
-3. Selecionar uma estrela e enviar uma nave de pesquisa.
-4. Visualizar os planetas, tipos planetários e recursos revelados.
-5. Enviar uma nave colonizadora e convertê-la em Força de Trabalho.
+3. Selecionar uma origem, um destino e enviar uma nave com tempo estimado de chegada.
+4. Sondar um sistema com uma nave de expedição e visualizar planetas e recursos.
+5. Enviar uma nave colonizadora diretamente, com ou sem sondagem prévia, e convertê-la em Força de Trabalho.
 6. Distribuir de 0 a 10 pontos entre os recursos dos planetas.
 7. Alternar o sistema entre Extração, Cultura, Ciência e Produção Industrial.
 8. Produzir uma nave ou melhoria pela fila industrial.

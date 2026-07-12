@@ -1,6 +1,6 @@
 # Zodiakos: primeiros 15 minutos da demo
 
-- **Versão:** 0.1
+- **Versão:** 0.2
 - **Data:** 12 de julho de 2026
 - **Status:** recorte vertical para revisão
 - **Documento-base:** [Game Design v0.10](2026-07-12-zodiakos-game-design.md)
@@ -10,7 +10,7 @@
 Os primeiros 15 minutos devem provar o ciclo mais importante de Zodiakos:
 
 1. Navegar pelo mapa estelar.
-2. Pesquisar um sistema.
+2. Escolher entre sondar um sistema ou colonizá-lo diretamente.
 3. Colonizar seus planetas.
 4. Distribuir Força de Trabalho.
 5. Produzir uma nova nave.
@@ -58,7 +58,7 @@ Na demo, o jogador começa como uma Civilização Emergente.
 
 ### 3.2 Unidades
 
-- Uma nave de pesquisa nível 1.
+- Uma nave de expedição nível 1.
 - Uma nave colonizadora nível 1.
 - Nenhum guarda.
 - Nenhum operário em trânsito.
@@ -120,16 +120,19 @@ Os valores abaixo servem para calibrar a experiência e não representam o reló
 - Um ciclo econômico acontece a cada cinco segundos.
 - Cada ponto em Metal ou Energia produz uma unidade por ciclo antes dos bônus.
 - Cada ponto em Produção Industrial gera um ponto industrial por ciclo.
-- Uma viagem entre estrelas da região natal deve durar de 20 a 35 segundos.
-- A pesquisa de um sistema leva cinco segundos após a chegada.
+- Uma nave de expedição leva de 20 a 30 segundos entre estrelas da região natal.
+- Uma nave colonizadora leva de 35 a 50 segundos no mesmo percurso.
+- Uma nave de guerra leva de 22 a 32 segundos no mesmo percurso.
+- A sondagem de um sistema leva cinco segundos após a chegada da expedição.
 - A colonização acontece imediatamente quando a nave chega e é consumida.
+- Nenhuma viagem consome combustível ou cobra uma tarifa adicional.
 - A pausa interrompe viagens, pesquisa, economia, produção e decisões da LLM.
 
 ## 6. Custos iniciais
 
 | Item | Créditos | Metal | Energia | Progresso industrial |
 |---|---:|---:|---:|---:|
-| Nave de pesquisa nível 1 | 60 | 5 | 5 | 30 |
+| Nave de expedição nível 1 | 60 | 5 | 5 | 30 |
 | Nave colonizadora nível 1 | 100 | 10 | 5 | 60 |
 | Ligação territorial | 0 | 5 | 0 | 0 |
 
@@ -152,15 +155,17 @@ O jogador aprende a:
 - Selecionar uma estrela.
 - Pausar e retomar a simulação.
 
-Ao selecionar uma estrela não pesquisada, o painel informa posição, distância e ações disponíveis. Recursos e planetas ainda não aparecem.
+Ao selecionar uma estrela não sondada, o painel informa posição, distância, tempo estimado por classe de nave e ações disponíveis. Recursos e planetas ainda não aparecem.
 
-**Conclusão:** selecionar uma estrela não pesquisada dentro do alcance da nave.
+As ações `Sondar` e `Colonizar` aparecem desde o primeiro clique. `Atacar` também aparece quando houver uma nave de guerra disponível. Nenhuma delas depende de sondagem prévia.
+
+**Conclusão:** selecionar uma estrela não sondada dentro do alcance da nave.
 
 ### 7.2 Minutos 2 a 4: pesquisar
 
-**Quest:** `Conhecer antes de ocupar`
+**Quest:** `Conhecer antes de investir`
 
-O jogador seleciona a nave de pesquisa, escolhe `Pesquisar` e arrasta uma linha do sistema natal até o destino.
+O caminho recomendado seleciona a nave de expedição, escolhe `Sondar` e arrasta uma linha do sistema natal até o destino.
 
 Durante o desenho:
 
@@ -169,17 +174,19 @@ Durante o desenho:
 - O alcance máximo aparece como referência visual.
 - Confirmar a linha envia a nave.
 
-Na chegada, a pesquisa revela planetas, tipos planetários, Metal, Energia e características do sistema.
+Na chegada, a sondagem revela planetas, tipos planetários, Metal, Energia e características do sistema.
 
-A nave de pesquisa não é consumida. Depois da análise, ela permanece no sistema e pode receber outra rota.
+A nave de expedição não é consumida. Depois da análise, ela permanece no sistema e pode receber outra rota.
 
-**Conclusão:** pesquisar qualquer sistema não dominado.
+O jogador pode ignorar a recomendação e enviar a nave colonizadora diretamente. Nesse caso, a quest é superada, e as informações do sistema são reveladas somente quando a colonizadora chega.
+
+**Conclusão:** sondar um sistema ou assumir o risco de colonizá-lo diretamente.
 
 ### 7.3 Minutos 4 a 6: primeira colonização
 
 **Quest:** `Uma nova morada`
 
-No painel do sistema pesquisado, o jogador escolhe `Colonizar`. A nave colonizadora inicial percorre a rota e é consumida ao chegar.
+No painel do sistema sondado, o jogador escolhe `Colonizar`. Também é possível escolher uma estrela ainda não sondada diretamente no mapa. A nave colonizadora inicial percorre a rota mais lentamente e é consumida ao chegar.
 
 O sistema recebe três pontos de Força de Trabalho. O jogador os distribui entre os planetas e recursos usando barras horizontais de zero a dez.
 
@@ -199,15 +206,15 @@ O jogo explica que:
 - Toda a Força de Trabalho avança a fila.
 - Trocar de modo pausa a fila sem perder progresso.
 
-O jogador adiciona uma nave colonizadora nível 1 à fila. Enquanto ela é construída, a nave de pesquisa pode receber uma rota até o segundo sistema elegível.
+O jogador adiciona uma nave colonizadora nível 1 à fila. Enquanto ela é construída, a nave de expedição pode receber uma rota até o segundo sistema elegível.
 
-**Conclusão:** concluir a segunda nave colonizadora e pesquisar outro sistema.
+**Conclusão:** concluir a segunda nave colonizadora e sondar ou selecionar outro sistema.
 
 ### 7.5 Minutos 9 a 12: terceiro sistema
 
 **Quest:** `Três pontos definem uma fronteira`
 
-O jogador envia a nova nave colonizadora ao segundo sistema pesquisado e distribui seus três pontos de Força de Trabalho.
+O jogador envia a nova nave colonizadora ao segundo sistema, sondado ou não, e distribui seus três pontos de Força de Trabalho.
 
 Agora existem três sistemas dominados:
 
@@ -245,7 +252,7 @@ Depois do primeiro Zodíaco:
 - A cadeia de introdução é concluída.
 - O jogador recebe uma conquista inicial.
 - Um sinal de atividade revela a direção geral da civilização LLM.
-- A próxima quest sugere produzir um guarda e preparar uma fronteira.
+- A próxima quest sugere produzir uma nave de guerra e preparar uma fronteira.
 - Cultura, Ciência e evolução de sistemas passam a ser apresentados por quests independentes.
 - A proteção contra ataques pode terminar.
 
@@ -280,7 +287,7 @@ Influência Cultural e Ciência aparecem na barra depois da conclusão do primei
 - Modo ativo.
 - Produção por ciclo.
 - Fila industrial.
-- Ações de pesquisar, colonizar e criar ligação quando aplicáveis.
+- Ações de sondar, colonizar, atacar e criar ligação quando aplicáveis.
 
 ### 9.4 Rastreador de quests
 
@@ -337,7 +344,7 @@ Ao fechar o aplicativo, um save final registra o estado completo. Ao retornar, o
 A civilização adversária utiliza as mesmas ações do jogador, mas respeita a região de segurança.
 
 - Não recebe recursos ou visão privilegiada.
-- Pode pesquisar, colonizar, distribuir Força de Trabalho e formar seu próprio Zodíaco.
+- Pode sondar, colonizar diretamente, distribuir Força de Trabalho e formar seu próprio Zodíaco.
 - Decide por eventos ou em intervalos de 15 segundos, nunca a cada quadro.
 - Não pode emitir ordens de ataque durante a proteção inicial.
 - Se uma resposta da LLM for inválida ou indisponível, mantém a ordem anterior e tenta novamente no próximo intervalo.
@@ -359,7 +366,7 @@ A primeira aparição serve como promessa do conflito futuro, não como combate 
 
 - Um novo jogador emite sua primeira ordem em até dois minutos.
 - Pelo menos 80% dos testadores formam um Zodíaco em até 15 minutos sem ajuda externa.
-- Pelo menos 80% identificam corretamente que pesquisa revela planetas e recursos.
+- Pelo menos 80% identificam corretamente que sondagem revela planetas e recursos, mas não é obrigatória para colonizar.
 - Pelo menos 80% compreendem que a nave colonizadora vira Força de Trabalho.
 - Pelo menos 80% conseguem explicar por que fechar uma área é vantajoso.
 
