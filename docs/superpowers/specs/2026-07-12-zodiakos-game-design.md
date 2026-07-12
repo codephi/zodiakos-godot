@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.7
+- **Versão:** 0.8
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -60,8 +60,8 @@ A direção central é uma estratégia territorial e logística em tempo real:
 1. Arrastar o mapa estelar e identificar um sistema de interesse.
 2. Selecionar a estrela e enviar uma nave de pesquisa.
 3. Descobrir os planetas, tipos planetários e recursos do sistema.
-4. Enviar uma nave colonizadora para converter sua capacidade em Pontos de Colônia.
-5. Distribuir os Pontos de Colônia entre planetas e recursos.
+4. Enviar uma nave colonizadora para converter sua capacidade em Força de Trabalho.
+5. Distribuir a Força de Trabalho ou especializar o sistema.
 6. Conectar sistemas dominados e fechar um Zodíaco válido.
 7. Usar os bônus territoriais para acelerar produção, transporte e expansão.
 8. Investir o estoque em estruturas, ligações e novas naves.
@@ -169,35 +169,67 @@ Ao selecionar uma estrela, o jogador pode enviar uma nave de pesquisa. Quando el
 
 A nave de pesquisa não utiliza combustível consumível. Seus limites operacionais são definidos pelo alcance máximo das ligações, pela velocidade e pelas capacidades de seu perfil.
 
-### 6.3 Colonização e Pontos de Colônia
+### 6.3 Colonização e Força de Trabalho
 
 A nave colonizadora é mais cara que a nave de pesquisa. Cada unidade transporta uma capacidade limitada de colonização e consegue atender apenas uma quantidade máxima de planetas.
+
+O nível da nave colonizadora determina a quantidade de Força de Trabalho transportada. Como referência conceitual, uma nave de nível 3 pode chegar com 10 pontos; a tabela definitiva será definida durante o balanceamento da demo.
 
 Quando chega ao sistema escolhido:
 
 1. A nave colonizadora é consumida permanentemente.
-2. Sua capacidade é transformada em Pontos de Colônia vinculados ao sistema.
+2. Sua capacidade é transformada em Força de Trabalho vinculada ao sistema.
 3. O jogador distribui esses pontos entre os planetas pesquisados.
 4. Dentro de cada planeta, os pontos são distribuídos entre seus recursos.
 5. Novas naves colonizadoras acrescentam capacidade ao mesmo sistema.
 
-Cada recurso possui uma barra horizontal segmentada de 0 a 10. Cada segmento preenchido representa um Ponto de Colônia dedicado à extração daquele recurso. O nível aplicado determina quanto do potencial natural do recurso é aproveitado.
+Cada recurso possui uma barra horizontal segmentada de 0 a 10. Cada segmento preenchido representa um ponto de Força de Trabalho dedicado à extração daquele recurso. O nível aplicado determina quanto do potencial natural do recurso é aproveitado.
 
-Os Pontos de Colônia podem ser redistribuídos imediatamente e sem custo entre os planetas e recursos do mesmo sistema. Eles nunca podem ser retirados ou transferidos para outra estrela. A produção resultante combina:
+A Força de Trabalho pode ser redistribuída imediatamente e sem custo entre os planetas e recursos do mesmo sistema. Ela nunca pode ser retirada ou transferida para outra estrela. A produção resultante combina:
 
 - Potencial natural do planeta.
-- Pontos de Colônia aplicados ao recurso.
+- Força de Trabalho aplicada ao recurso.
 - Características e bônus do sistema solar.
 - Tecnologias e especializações da civilização.
 - Bônus territorial do Zodíaco.
 
-Ao clicar em um sistema pesquisado, o painel apresenta os planetas em linhas ou cartões, seus tipos, seus recursos e as barras de Pontos de Colônia. O jogador usa esse painel para concentrar ou diversificar sua produção.
+Ao clicar em um sistema pesquisado, o painel apresenta os planetas em linhas ou cartões, seus tipos, seus recursos e as barras de Força de Trabalho. O jogador usa esse painel para concentrar ou diversificar sua produção.
 
-### 6.4 Unidades operacionais iniciais
+### 6.4 Modos do sistema solar
+
+Cada sistema opera em apenas um modo por vez. Mudar de modo redistribui toda a sua Força de Trabalho para a função escolhida.
+
+#### Extração
+
+A Força de Trabalho é distribuída entre os recursos dos planetas. O sistema produz matérias-primas de acordo com as barras de 0 a 10 e os bônus aplicáveis.
+
+#### Cultural
+
+Toda a Força de Trabalho produz Influência Cultural. Enquanto esse modo estiver ativo, o sistema não extrai recursos, não gera Ciência e não avança sua fila industrial.
+
+#### Científico
+
+Toda a Força de Trabalho produz Ciência. Enquanto esse modo estiver ativo, o sistema não extrai recursos, não gera Cultura e não avança sua fila industrial.
+
+#### Produção Industrial
+
+Toda a Força de Trabalho é aplicada à fila de produção do sistema. Enquanto esse modo estiver ativo, o sistema não extrai recursos e não gera Cultura ou Ciência.
+
+A fila industrial pode produzir:
+
+- Naves.
+- Estruturas de proteção.
+- Estruturas de produção e suporte.
+- Melhorias locais.
+- Evolução de nível do sistema solar.
+
+O nível do sistema melhora sua capacidade de extração e libera produção industrial, bélica, colonizadora e outros recursos estratégicos. O avanço de nível ocupa a fila industrial como qualquer outro projeto.
+
+### 6.5 Unidades operacionais iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
 - **Guarda:** patrulha pontos do Zodíaco, reage a invasões e participa da quebra de elos inimigos.
-- **Nave colonizadora:** transforma-se em Pontos de Colônia e consolida a ocupação dos planetas de um sistema.
+- **Nave colonizadora:** transforma-se em Força de Trabalho e consolida a ocupação dos planetas de um sistema.
 
 Essas unidades executam suas tarefas automaticamente, mas cada nave recebe do jogador uma ação, um alvo e uma rota. O sistema valida e realiza o deslocamento dentro da rede.
 
@@ -329,15 +361,42 @@ Os acordos previstos incluem:
 
 O modelo de cumprimento, rompimento e reputação dos tratados será especificado junto ao multiplayer online; ele não é necessário para validar a jogabilidade territorial da demo.
 
-## 11. Crédito interestelar
+## 11. Economias da civilização
 
-Crédito é a moeda comum do universo. As decisões confirmadas são:
+Zodiakos possui três economias complementares.
+
+### 11.1 Créditos
+
+Créditos são a moeda comercial e transferível do universo. Podem comprar qualquer bem, unidade, estrutura, recurso ou serviço definido como negociável.
 
 - Jogadores podem obter créditos por comércio.
 - A conquista de territórios ocupados concede créditos ou riqueza ao conquistador.
 - A riqueza agregada influencia a capacidade de uma Aliança.
 
-A natureza desses créditos de conquista - transferência do derrotado ou emissão do sistema -, a emissão inicial, os mecanismos de retirada de moeda, a inflação e a conversão de riqueza em vagas foram deliberadamente retirados do escopo atual. Esse conjunto formará uma especificação monetária própria antes da implementação da economia online.
+### 11.2 Influência Cultural
+
+Influência Cultural é produzida apenas pela própria civilização e não pode ser comprada ou negociada diretamente. Ela pode ser gasta para acelerar:
+
+- Criação e integração de colônias.
+- Mobilização de trabalho.
+- Ações relacionadas à produção e aos recursos.
+- Diplomacia.
+- Outras ações sociais e administrativas.
+
+### 11.3 Ciência
+
+Ciência é produzida apenas pela própria civilização e não pode ser comprada ou negociada diretamente. Ela permite:
+
+- Aumentar níveis tecnológicos.
+- Melhorar níveis e capacidades das naves.
+- Aumentar velocidades.
+- Ampliar a capacidade de observação e operação no mapa.
+- Aumentar o comprimento máximo das ligações.
+- Desbloquear tecnologias e especializações.
+
+Créditos podem financiar estruturas que aumentem a geração de Cultura ou Ciência, mas não podem ser convertidos diretamente nessas economias.
+
+A natureza dos créditos de conquista - transferência do derrotado ou emissão do sistema -, a emissão inicial, os mecanismos de retirada de moeda, a inflação e a conversão de riqueza em vagas foram deliberadamente retirados do escopo atual. Esse conjunto formará uma especificação monetária própria antes da implementação da economia online.
 
 ## 12. Progressão contínua
 
@@ -348,6 +407,7 @@ Não existe vitória final. O progresso será comunicado por:
 - Quests.
 - Desafios contextuais ao longo da expansão.
 - Crescimento territorial, logístico, tecnológico e diplomático.
+- Evolução de nível dos sistemas solares e das naves.
 
 Quests e desafios devem orientar o jogador sem transformar o universo em uma sequência linear de missões.
 
@@ -364,8 +424,11 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 - Câmera e elementos 3D sobre um único plano de jogo.
 - Mapa estelar procedural, contínuo e navegável por arraste.
 - Nave de pesquisa que revela planetas, tipos e recursos de um sistema.
-- Nave colonizadora consumida e convertida em Pontos de Colônia.
+- Nave colonizadora consumida e convertida em Força de Trabalho.
 - Painel do sistema com distribuição de 0 a 10 pontos por recurso.
+- Modos exclusivos de Extração, Cultura, Ciência e Produção Industrial.
+- Fila local para naves, defesas, estruturas, melhorias e evolução de nível.
+- Créditos, Influência Cultural e Ciência com funções distintas.
 - Ordens individuais e rotas desenhadas entre estrelas.
 - Alcance máximo de ligação e expansão dessa capacidade por perfis especializados.
 - Criação de ligações e Zodíacos com pelo menos três estrelas.
@@ -394,19 +457,22 @@ A demo cumpre seu objetivo quando permite:
 2. Arrastar e ampliar o mapa para visualizar regiões procedurais.
 3. Selecionar uma estrela e enviar uma nave de pesquisa.
 4. Visualizar os planetas, tipos planetários e recursos revelados.
-5. Enviar uma nave colonizadora e convertê-la em Pontos de Colônia.
+5. Enviar uma nave colonizadora e convertê-la em Força de Trabalho.
 6. Distribuir de 0 a 10 pontos entre os recursos dos planetas.
-7. Capturar recursos de um sistema isolado na velocidade básica.
-8. Definir uma ação e desenhar a rota de uma nave entre estrelas.
-9. Fechar um Zodíaco com pelo menos três estrelas e observar os bônus de 3x.
-10. Ver um operário transportar produção até uma base ou estoque.
-11. Investir a produção em expansão ou unidades.
-12. Observar um adversário LLM pesquisar, colonizar e expandir usando comandos válidos.
-13. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
-14. Perder um ponto de borda e observar o Zodíaco se reorganizar quando existir uma ligação substituta dentro do alcance.
-15. Romper um Zodíaco sem ligação substituta válida e remover seus bônus.
-16. Conquistar uma estrela com naves colonizadoras.
-17. Acumular pontuação e receber um novo desafio sem encerrar o universo.
+7. Alternar o sistema entre Extração, Cultura, Ciência e Produção Industrial.
+8. Produzir uma nave ou melhoria pela fila industrial.
+9. Evoluir o nível de um sistema solar.
+10. Capturar recursos de um sistema isolado na velocidade básica.
+11. Definir uma ação e desenhar a rota de uma nave entre estrelas.
+12. Fechar um Zodíaco com pelo menos três estrelas e observar os bônus de 3x.
+13. Ver um operário transportar produção até uma base ou estoque.
+14. Investir a produção em expansão ou unidades.
+15. Observar um adversário LLM pesquisar, colonizar e expandir usando comandos válidos.
+16. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
+17. Perder um ponto de borda e observar o Zodíaco se reorganizar quando existir uma ligação substituta dentro do alcance.
+18. Romper um Zodíaco sem ligação substituta válida e remover seus bônus.
+19. Conquistar uma estrela com naves colonizadoras.
+20. Acumular pontuação e receber um novo desafio sem encerrar o universo.
 
 ## 15. Próximas especificações de design
 
@@ -414,7 +480,7 @@ O próximo documento detalhará a experiência dos primeiros minutos da demo e t
 
 1. Geração e exploração do universo.
 2. Rede territorial, geometria e Zodíacos.
-3. Produção, transporte e estoque.
+3. Força de Trabalho, especializações, produção, transporte e estoque.
 4. Unidades, combate, invasão e conquista.
 5. Agentes LLM e interface de comandos.
 6. Progressão, pontuação, conquistas e desafios.
