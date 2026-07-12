@@ -5,3 +5,4 @@ Jogo de estratégia territorial e logística em um universo interestelar contín
 ## Documentação
 
 - [Documento inicial de game design](docs/superpowers/specs/2026-07-12-zodiakos-game-design.md)
+- [Primeiros 15 minutos da demo](docs/superpowers/specs/2026-07-12-zodiakos-first-15-minutes-design.md)

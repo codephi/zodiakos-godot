@@ -493,7 +493,7 @@ A demo cumpre seu objetivo quando permite:
 
 ## 15. Próximas especificações de design
 
-O próximo documento detalhará a experiência dos primeiros minutos da demo e transformará o ciclo principal em regras operacionais. Depois dele, o design será separado nos seguintes módulos:
+A experiência inicial está detalhada em [Primeiros 15 minutos da demo](2026-07-12-zodiakos-first-15-minutes-design.md). Os próximos módulos de design são:
 
 1. Geração e exploração do universo.
 2. Rede territorial, geometria e Zodíacos.
