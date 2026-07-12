@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.5
+- **Versão:** 0.6
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -9,7 +9,7 @@
 
 ## 1. Visão do jogo
 
-Zodiakos é um jogo de estratégia territorial e logística em tempo real ambientado em um universo interestelar contínuo. A representação é tridimensional, mas a jogabilidade acontece em um único plano, formando uma experiência 2.5D composta por estrelas, ligações, estruturas, unidades e zonas poligonais.
+Zodiakos é um jogo de estratégia territorial e logística em tempo real ambientado em um universo interestelar contínuo. A representação é tridimensional, mas a jogabilidade acontece em um único plano, formando uma experiência 2.5D composta por estrelas, ligações, estruturas, unidades e Zodíacos poligonais.
 
 O jogo não possui partidas isoladas nem uma condição final de vitória. O jogador desenvolve uma civilização ao longo do tempo, acumula pontos, conquista realizações, completa quests e enfrenta desafios progressivos. Perdas territoriais fazem parte da história daquele universo, mas não encerram o jogo.
 
@@ -19,7 +19,7 @@ A fantasia central é transformar uma pequena presença espacial em uma rede int
 
 ### 2.1 Território visível
 
-O domínio de uma civilização é representado diretamente no mapa. Estrelas conectadas formam rotas; rotas fechadas demarcam zonas; zonas válidas aceleram produção, movimento e outras ações dentro de suas fronteiras.
+O domínio de uma civilização é representado diretamente no mapa. Estrelas conectadas formam rotas; rotas fechadas demarcam Zodíacos; Zodíacos válidos aceleram produção, movimento e outras ações dentro de suas fronteiras.
 
 ### 2.2 Ordens por nave
 
@@ -57,15 +57,16 @@ Jogadores humanos e agentes controlados por LLM utilizam a mesma camada de coman
 
 A direção central é uma estratégia territorial e logística em tempo real:
 
-1. Observar a região conhecida e identificar oportunidades.
-2. Selecionar uma nave e definir sua ação e seu alvo.
-3. Desenhar a rota da nave entre estrelas conhecidas.
-4. Explorar, coletar recursos, dominar uma estrela, defender ou atacar.
-5. Conectar estrelas dominadas e fechar uma zona válida.
-6. Usar os bônus territoriais para acelerar produção, transporte e expansão.
-7. Investir o estoque em estruturas, ligações e novas naves.
-8. Pontuar, desbloquear conquistas e receber novos desafios.
-9. Repetir o ciclo em escala crescente, sem reiniciar o universo.
+1. Arrastar o mapa estelar e identificar um sistema de interesse.
+2. Selecionar a estrela e enviar uma nave de pesquisa.
+3. Descobrir os planetas, tipos planetários e recursos do sistema.
+4. Enviar uma nave colonizadora para converter sua capacidade em Pontos de Colônia.
+5. Distribuir os Pontos de Colônia entre planetas e recursos.
+6. Conectar sistemas dominados e fechar um Zodíaco válido.
+7. Usar os bônus territoriais para acelerar produção, transporte e expansão.
+8. Investir o estoque em estruturas, ligações e novas naves.
+9. Defender, atacar, pontuar e receber novos desafios.
+10. Repetir o ciclo em escala crescente, sem reiniciar o universo.
 
 O principal domínio do jogador não é a velocidade de clicar, mas a capacidade de construir uma rede eficiente, antecipar ameaças e selecionar prioridades.
 
@@ -87,24 +88,19 @@ As referências astronômicas servem como inspiração visual e espacial; Zodiak
 
 Novas regiões são materializadas conforme a exploração avança. O universo percebido pode crescer continuamente sem exigir que todo o mapa seja carregado ou armazenado de uma vez.
 
-### 5.3 Visibilidade e conhecimento
+### 5.3 Mapa estelar interativo
 
-O mapa separa a posição visível de uma estrela do conhecimento detalhado sobre ela. Isso permite apresentar um universo de escala praticamente infinita sem eliminar a exploração.
+O mapa estelar é a interface principal do jogo. O jogador arrasta a tela livremente e vê diretamente as estrelas das regiões visitadas pela câmera. Não existe névoa escondendo a posição dos sistemas.
 
-Cada estrela pode estar em um dos seguintes estados para uma civilização:
+O universo é materializado proceduralmente em blocos conforme o deslocamento e o nível de zoom. Estrelas distantes utilizam representações simplificadas, permitindo a sensação de continuidade sem carregar o mapa infinito de uma vez.
 
-- **Catalogada:** sua posição e aparência geral são visíveis, mas recursos, estruturas e presença inimiga são desconhecidos.
-- **Detectada:** uma sonda, nave, colônia ou sensor revela tipo, conexões possíveis e sinais gerais de recursos ou atividade.
-- **Explorada:** uma nave exploradora realizou a análise detalhada e revelou recursos, riscos e possibilidades de domínio.
-- **Monitorada:** está dentro do alcance atual de sensores próprios ou aliados, permitindo acompanhar mudanças e movimentações em tempo real.
+Ver uma estrela não revela automaticamente seu sistema solar. Antes da pesquisa, o jogador conhece sua posição e aparência externa. Depois de enviar uma nave de pesquisa, passa a conhecer seus planetas, tipos planetários e recursos.
 
-As colônias criam áreas de sensores ao seu redor. Estrelas muito distantes continuam catalogadas, mas não fornecem informação atualizada. O mapa utiliza geração procedural por regiões e níveis de detalhe para não carregar o universo inteiro simultaneamente.
-
-Aliados podem compartilhar visão atual das regiões monitoradas. Quando uma Aliança é abandonada, o jogador preserva o último estado conhecido das áreas dos ex-aliados, mas deixa de receber atualizações. A interface mostra a idade dessa informação e indica que ela pode estar desatualizada.
+Aliados podem compartilhar informações atualizadas de seus territórios. Quando uma Aliança é abandonada, o jogador preserva o último estado conhecido das áreas dos ex-aliados, mas deixa de receber atualizações. A interface mostra a idade dessa informação e indica que ela pode estar desatualizada.
 
 ### 5.4 Modos de exploração
 
-Uma unidade exploratória pode receber:
+Uma nave de pesquisa pode receber:
 
 - Uma estrela específica como destino.
 - Uma direção geral para avançar.
@@ -129,16 +125,16 @@ O jogador nasce sem Aliança, em uma região distante das concentrações territ
 O protótipo visual estabelece os seguintes elementos conceituais:
 
 - **Ponto de ligação:** estrela ou nó usado para ampliar a rede.
-- **Demarcador de zona:** ligação que ajuda a formar a fronteira territorial.
-- **Estação de ligação:** estrutura que conecta zonas ou redes distintas.
+- **Demarcador de Zodíaco:** ligação que ajuda a formar a fronteira territorial.
+- **Estação de ligação:** estrutura que conecta Zodíacos ou redes distintas.
 - **Base de produção:** destino operacional para recursos transportados.
 - **Estoque de produção:** reserva usada para criar novos demarcadores e outros elementos.
 - **Laboratório:** estrutura que desbloqueia esquemas de produção.
-- **Zona:** área delimitada por ligações pertencentes a uma civilização, formada por pelo menos três estrelas.
+- **Zodíaco:** área territorial delimitada por ligações pertencentes a uma civilização, formada por pelo menos três estrelas.
 
-Qualquer estrela controlada permite capturar seus recursos na velocidade básica de 1x. Quando o jogador conecta de ponta a ponta pelo menos três estrelas dominadas e fecha um polígono válido, ele captura a área interna e ativa os bônus territoriais.
+Qualquer sistema controlado permite extrair os recursos de seus planetas na velocidade básica de 1x. Quando o jogador conecta de ponta a ponta pelo menos três estrelas dominadas e fecha um polígono válido, ele forma um Zodíaco, captura a área interna e ativa os bônus territoriais.
 
-Dentro de uma zona íntegra:
+Dentro de um Zodíaco íntegro:
 
 - Recursos são capturados a 3x.
 - Naves se movimentam a 3x.
@@ -161,34 +157,47 @@ Toda ligação possui um alcance máximo. Uma linha que ultrapasse esse alcance 
 
 A interface deve indicar o alcance disponível durante o desenho da linha e mostrar claramente quando a estrela de destino está fora dele.
 
-### 6.2 Unidades de exploração
+### 6.2 Nave de pesquisa
 
-#### Sonda
+Ao selecionar uma estrela, o jogador pode enviar uma nave de pesquisa. Quando ela chega ao destino, revela:
 
-- É barata e lenta.
-- Pode ser controlada remotamente e receber novas rotas.
-- Detecta estrelas, caminhos possíveis e sinais gerais de recursos ou atividade.
-- Não domina estrelas, coleta recursos, transporta carga ou combate.
-- Não possui meios próprios de defesa.
+- Quantidade de planetas do sistema.
+- Tipo de cada planeta.
+- Entre um e três tipos de recurso por planeta.
+- Características e bônus próprios do sistema.
+- Possibilidades de colonização.
 
-Uma sonda transforma uma estrela catalogada em detectada, mas não realiza sua exploração completa.
+A nave de pesquisa não utiliza combustível consumível. Seus limites operacionais são definidos pelo alcance máximo das ligações, pela velocidade e pelas capacidades de seu perfil.
 
-#### Nave exploradora
+### 6.3 Colonização e Pontos de Colônia
 
-- É mais cara e rápida que uma sonda.
-- Pode receber capacidades e alcance especializados.
-- Revela informações detalhadas sobre recursos, riscos e possibilidades de domínio.
-- Pode estabelecer contato e interagir com estruturas ou eventos encontrados.
+A nave colonizadora é mais cara que a nave de pesquisa. Cada unidade transporta uma capacidade limitada de colonização e consegue atender apenas uma quantidade máxima de planetas.
 
-Uma nave exploradora transforma uma estrela detectada em explorada. Se permanecer dentro do alcance de sensores, a estrela também fica monitorada.
+Quando chega ao sistema escolhido:
 
-Sondas e naves não utilizam combustível consumível. Seus limites operacionais são definidos pelo alcance máximo das ligações, pela velocidade e pelas capacidades do perfil, evitando uma camada adicional de reabastecimento e manutenção.
+1. A nave colonizadora é consumida permanentemente.
+2. Sua capacidade é transformada em Pontos de Colônia vinculados ao sistema.
+3. O jogador distribui esses pontos entre os planetas pesquisados.
+4. Dentro de cada planeta, os pontos são distribuídos entre seus recursos.
+5. Novas naves colonizadoras acrescentam capacidade ao mesmo sistema.
 
-### 6.3 Unidades operacionais iniciais
+Cada recurso possui uma barra horizontal segmentada de 0 a 10. Cada segmento preenchido representa um Ponto de Colônia dedicado à extração daquele recurso. O nível aplicado determina quanto do potencial natural do recurso é aproveitado.
+
+Os Pontos de Colônia podem ser redistribuídos entre os planetas e recursos do sistema. A produção resultante combina:
+
+- Potencial natural do planeta.
+- Pontos de Colônia aplicados ao recurso.
+- Características e bônus do sistema solar.
+- Tecnologias e especializações da civilização.
+- Bônus territorial do Zodíaco.
+
+Ao clicar em um sistema pesquisado, o painel apresenta os planetas em linhas ou cartões, seus tipos, seus recursos e as barras de Pontos de Colônia. O jogador usa esse painel para concentrar ou diversificar sua produção.
+
+### 6.4 Unidades operacionais iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
-- **Guarda:** patrulha pontos da zona, reage a invasões e participa da quebra de elos inimigos.
-- **Colonizador:** consolida a ocupação de estrelas e territórios conquistados.
+- **Guarda:** patrulha pontos do Zodíaco, reage a invasões e participa da quebra de elos inimigos.
+- **Nave colonizadora:** transforma-se em Pontos de Colônia e consolida a ocupação dos planetas de um sistema.
 
 Essas unidades executam suas tarefas automaticamente, mas cada nave recebe do jogador uma ação, um alvo e uma rota. O sistema valida e realiza o deslocamento dentro da rede.
 
@@ -196,42 +205,42 @@ Essas unidades executam suas tarefas automaticamente, mas cada nave recebe do jo
 
 O conflito acontece sobre a rede territorial:
 
-1. Guardas atacam e quebram um elo de uma zona adversária.
-2. Após a abertura, colonizadores são enviados para consolidar a conquista.
-3. Uma estrela ocupada exige três colonizadores consecutivos para mudar de controle, conforme a regra apresentada no protótipo.
+1. Guardas atacam e quebram um elo de um Zodíaco adversário.
+2. Após a abertura, naves colonizadoras são enviadas para consolidar a conquista.
+3. Uma estrela ocupada exige três naves colonizadoras consecutivas para mudar de controle, conforme a regra apresentada no protótipo.
 4. A quantidade de guardas influencia a velocidade ou a pressão da conquista.
-5. Um upgrade pode permitir que guardas capturem operários e colonizadores encontrados durante o deslocamento.
+5. Um upgrade pode permitir que guardas capturem operários e naves colonizadoras encontrados durante o deslocamento.
 
 ### 7.1 Cerco por fechamento de área
 
-Estrelas neutras ou inimigas dentro de uma zona não mudam de dono automaticamente. O fechamento cria vantagens para conquistá-las:
+Estrelas neutras ou inimigas dentro de um Zodíaco não mudam de dono automaticamente. O fechamento cria vantagens para conquistá-las:
 
 - Estrelas neutras são dominadas a 3x.
-- Contra uma estrela inimiga cercada, o proprietário da zona recebe vantagem de ataque ou conquista de 5x.
+- Contra uma estrela inimiga cercada, o proprietário do Zodíaco recebe vantagem de ataque ou conquista de 5x.
 - Outros jogadores da mesma Aliança recebem vantagem de 2x contra essa estrela.
 - A estrela inimiga continua pertencendo ao adversário até a conclusão da conquista.
 
 Os modificadores de 5x e 2x são as regras específicas para conquistar estrelas inimigas cercadas; o bônus territorial geral permanece em 3x para movimento, recursos e outras ações.
 
-### 7.2 Reorganização e ruptura da zona
+### 7.2 Reorganização e ruptura do Zodíaco
 
-A zona só concede vantagens enquanto sua borda formar um polígono fechado com pelo menos três estrelas. Se uma estrela da borda for conquistada ou uma ligação for rompida, o sistema tenta reorganizar automaticamente o contorno:
+O Zodíaco só concede vantagens enquanto sua borda formar um polígono fechado com pelo menos três estrelas. Se uma estrela da borda for conquistada ou uma ligação for rompida, o sistema tenta reorganizar automaticamente o contorno:
 
 1. O sistema identifica as estrelas sobreviventes que eram vizinhas do ponto perdido.
 2. Mede a distância entre elas usando a capacidade de ligação disponível.
 3. Se a nova ligação estiver dentro do alcance e formar um polígono válido, ela é criada automaticamente.
-4. A zona assume o novo contorno e mantém seus bônus dentro da área restante.
-5. Se nenhuma reorganização válida for possível, a zona é desativada imediatamente.
+4. O Zodíaco assume o novo contorno e mantém seus bônus dentro da área restante.
+5. Se nenhuma reorganização válida for possível, o Zodíaco é desativado imediatamente.
 
-Quando a zona é desativada:
+Quando o Zodíaco é desativado:
 
-- Produção, movimento e ações retornam à velocidade aplicável fora da zona.
+- Produção, movimento e ações retornam à velocidade aplicável fora do Zodíaco.
 - Estrelas neutras perdem o bônus de captura.
 - Estrelas inimigas deixam de sofrer as vulnerabilidades de 5x e 2x.
 
-Por exemplo, se uma zona quadrilateral `A-B-C-D` perder a estrela `B`, o sistema tenta conectar `A` a `C`. Se a distância estiver dentro do alcance, a zona continua como o triângulo `A-C-D`. Se estiver fora, o contorno se rompe.
+Por exemplo, se um Zodíaco quadrilateral `A-B-C-D` perder a estrela `B`, o sistema tenta conectar `A` a `C`. Se a distância estiver dentro do alcance, o Zodíaco continua como o triângulo `A-C-D`. Se estiver fora, o contorno se rompe.
 
-O protótipo também propõe que uma zona cercada possa tentar iniciar uma nova zona no ponto livre mais próximo fora do cerco. Os números, tempos e condições exatas serão tratados na especificação de combate, sem bloquear o primeiro protótipo do ciclo territorial.
+O protótipo também propõe que um Zodíaco cercado possa tentar iniciar outro Zodíaco no ponto livre mais próximo fora do cerco. Os números, tempos e condições exatas serão tratados na especificação de combate, sem bloquear o primeiro protótipo do ciclo territorial.
 
 ## 8. Agentes controlados por LLM
 
@@ -277,7 +286,7 @@ Membros de uma Aliança começam com todos os demais integrantes disponíveis pa
 Para mudar de Aliança, o jogador também envia uma nave até o território de um membro do novo grupo e solicita adesão. Quando a solicitação é aceita:
 
 - O jogador sai automaticamente da Aliança anterior.
-- Zonas, estruturas, unidades e recursos continuam pertencendo ao jogador.
+- Zodíacos, estruturas, unidades e recursos continuam pertencendo ao jogador.
 - O patrimônio passa a representar a nova filiação.
 - Uma vulnerabilidade é criada em favor da Aliança abandonada.
 
@@ -353,13 +362,15 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 - Save e retomada do mesmo universo.
 - Simulação em tempo real com pausa e sem aceleração.
 - Câmera e elementos 3D sobre um único plano de jogo.
-- Estados de visibilidade catalogada, detectada, explorada e monitorada.
-- Sonda remota e nave exploradora com funções distintas.
+- Mapa estelar procedural, contínuo e navegável por arraste.
+- Nave de pesquisa que revela planetas, tipos e recursos de um sistema.
+- Nave colonizadora consumida e convertida em Pontos de Colônia.
+- Painel do sistema com distribuição de 0 a 10 pontos por recurso.
 - Ordens individuais e rotas desenhadas entre estrelas.
 - Alcance máximo de ligação e expansão dessa capacidade por perfis especializados.
-- Criação de ligações e zonas com pelo menos três estrelas.
+- Criação de ligações e Zodíacos com pelo menos três estrelas.
 - Produção, transporte e estoque.
-- Operário, guarda e colonizador.
+- Operário, guarda e nave colonizadora.
 - Expansão, defesa e conquista territorial básica.
 - Uma ou mais civilizações adversárias comandadas por LLM.
 - Pontuação e desafios suficientes para sustentar o teste do ciclo principal.
@@ -380,27 +391,29 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 A demo cumpre seu objetivo quando permite:
 
 1. Criar um universo, fechá-lo e retomá-lo sem perder o estado.
-2. Compreender visualmente pontos, ligações, zonas e fronteiras.
-3. Enviar uma sonda e transformar uma estrela catalogada em detectada.
-4. Enviar uma nave exploradora e revelar as informações detalhadas da estrela.
-5. Capturar recursos de uma estrela isolada na velocidade básica.
-6. Definir uma ação e desenhar a rota de uma nave entre estrelas.
-7. Fechar uma zona com pelo menos três estrelas e observar os bônus de 3x.
-8. Ver um operário transportar produção até uma base ou estoque.
-9. Investir a produção em expansão ou unidades.
-10. Observar um adversário LLM explorar e expandir usando comandos válidos.
-11. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
-12. Perder um ponto de borda e observar a zona se reorganizar quando existir uma ligação substituta dentro do alcance.
-13. Romper uma zona sem ligação substituta válida e remover seus bônus.
-14. Conquistar uma estrela com colonizadores.
-15. Acumular pontuação e receber um novo desafio sem encerrar o universo.
+2. Arrastar e ampliar o mapa para visualizar regiões procedurais.
+3. Selecionar uma estrela e enviar uma nave de pesquisa.
+4. Visualizar os planetas, tipos planetários e recursos revelados.
+5. Enviar uma nave colonizadora e convertê-la em Pontos de Colônia.
+6. Distribuir de 0 a 10 pontos entre os recursos dos planetas.
+7. Capturar recursos de um sistema isolado na velocidade básica.
+8. Definir uma ação e desenhar a rota de uma nave entre estrelas.
+9. Fechar um Zodíaco com pelo menos três estrelas e observar os bônus de 3x.
+10. Ver um operário transportar produção até uma base ou estoque.
+11. Investir a produção em expansão ou unidades.
+12. Observar um adversário LLM pesquisar, colonizar e expandir usando comandos válidos.
+13. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
+14. Perder um ponto de borda e observar o Zodíaco se reorganizar quando existir uma ligação substituta dentro do alcance.
+15. Romper um Zodíaco sem ligação substituta válida e remover seus bônus.
+16. Conquistar uma estrela com naves colonizadoras.
+17. Acumular pontuação e receber um novo desafio sem encerrar o universo.
 
 ## 15. Próximas especificações de design
 
 O próximo documento detalhará a experiência dos primeiros minutos da demo e transformará o ciclo principal em regras operacionais. Depois dele, o design será separado nos seguintes módulos:
 
 1. Geração e exploração do universo.
-2. Rede territorial, geometria e zonas.
+2. Rede territorial, geometria e Zodíacos.
 3. Produção, transporte e estoque.
 4. Unidades, combate, invasão e conquista.
 5. Agentes LLM e interface de comandos.
