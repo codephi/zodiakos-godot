@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.8
+- **Versão:** 0.9
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -222,6 +222,12 @@ A fila industrial pode produzir:
 - Estruturas de produção e suporte.
 - Melhorias locais.
 - Evolução de nível do sistema solar.
+
+Somente o primeiro projeto da fila avança. Se o jogador mudar o sistema para Extração, Cultural ou Científico, o projeto ativo e toda a fila são pausados. O progresso acumulado é preservado integralmente e continua do mesmo ponto quando o modo Produção Industrial for reativado.
+
+Reordenar a fila não remove o progresso dos projetos. Cancelar é uma ação separada: o projeto é removido e devolve apenas parte dos recursos investidos. A proporção de devolução será um parâmetro de balanceamento.
+
+Na demo, a troca de modo é imediata. Nenhum progresso industrial acontece em segundo plano enquanto outro modo estiver ativo.
 
 O nível do sistema melhora sua capacidade de extração e libera produção industrial, bélica, colonizadora e outros recursos estratégicos. O avanço de nível ocupa a fila industrial como qualquer outro projeto.
 
