@@ -1,6 +1,6 @@
 # Zodiakos: documento inicial de game design
 
-- **Versão:** 0.2
+- **Versão:** 0.3
 - **Data:** 12 de julho de 2026
 - **Status:** visão consolidada e decisões confirmadas
 - **Plataforma inicial:** PC
@@ -132,6 +132,10 @@ O jogador emite ordens individualmente para cada nave. Uma ordem contém:
 
 Cada linha arrastada entre duas estrelas define um trecho do percurso. Vários trechos podem formar uma rota maior. A nave segue os pontos definidos até concluir a ação, ser redirecionada ou encontrar uma interrupção válida.
 
+Toda ligação possui um alcance máximo. Uma linha que ultrapasse esse alcance não pode ser confirmada. O jogador pode aumentar a capacidade de ligação ao desenvolver perfis especializados, como exploradores, mas nenhum aprimoramento elimina o limite de distância.
+
+A interface deve indicar o alcance disponível durante o desenho da linha e mostrar claramente quando a estrela de destino está fora dele.
+
 ### 6.2 Unidades iniciais
 
 - **Operário:** transporta uma carga por vez e procura a base de produção designada quando estiver carregado.
@@ -161,14 +165,23 @@ Estrelas neutras ou inimigas dentro de uma zona não mudam de dono automaticamen
 
 Os modificadores de 5x e 2x são as regras específicas para conquistar estrelas inimigas cercadas; o bônus territorial geral permanece em 3x para movimento, recursos e outras ações.
 
-### 7.2 Ruptura da zona
+### 7.2 Reorganização e ruptura da zona
 
-A zona só concede vantagens enquanto sua borda permanecer completamente fechada. Se uma estrela da borda for conquistada ou uma de suas ligações for rompida:
+A zona só concede vantagens enquanto sua borda formar um polígono fechado com pelo menos três estrelas. Se uma estrela da borda for conquistada ou uma ligação for rompida, o sistema tenta reorganizar automaticamente o contorno:
 
-- A zona é desativada imediatamente.
+1. O sistema identifica as estrelas sobreviventes que eram vizinhas do ponto perdido.
+2. Mede a distância entre elas usando a capacidade de ligação disponível.
+3. Se a nova ligação estiver dentro do alcance e formar um polígono válido, ela é criada automaticamente.
+4. A zona assume o novo contorno e mantém seus bônus dentro da área restante.
+5. Se nenhuma reorganização válida for possível, a zona é desativada imediatamente.
+
+Quando a zona é desativada:
+
 - Produção, movimento e ações retornam à velocidade aplicável fora da zona.
 - Estrelas neutras perdem o bônus de captura.
 - Estrelas inimigas deixam de sofrer as vulnerabilidades de 5x e 2x.
+
+Por exemplo, se uma zona quadrilateral `A-B-C-D` perder a estrela `B`, o sistema tenta conectar `A` a `C`. Se a distância estiver dentro do alcance, a zona continua como o triângulo `A-C-D`. Se estiver fora, o contorno se rompe.
 
 O protótipo também propõe que uma zona cercada possa tentar iniciar uma nova zona no ponto livre mais próximo fora do cerco. Os números, tempos e condições exatas serão tratados na especificação de combate, sem bloquear o primeiro protótipo do ciclo territorial.
 
@@ -293,6 +306,7 @@ A demo deve provar que o núcleo territorial é compreensível, estratégico e d
 - Simulação em tempo real com pausa e sem aceleração.
 - Câmera e elementos 3D sobre um único plano de jogo.
 - Ordens individuais e rotas desenhadas entre estrelas.
+- Alcance máximo de ligação e expansão dessa capacidade por perfis especializados.
 - Criação de ligações e zonas com pelo menos três estrelas.
 - Produção, transporte e estoque.
 - Operário, guarda e colonizador.
@@ -324,9 +338,10 @@ A demo cumpre seu objetivo quando permite:
 7. Investir a produção em expansão ou unidades.
 8. Observar um adversário LLM explorar e expandir usando comandos válidos.
 9. Cercar uma estrela inimiga e aplicar as vantagens territoriais de conquista.
-10. Defender uma ligação ou quebrar um elo adversário, removendo os bônus da zona.
-11. Conquistar uma estrela com colonizadores.
-12. Acumular pontuação e receber um novo desafio sem encerrar o universo.
+10. Perder um ponto de borda e observar a zona se reorganizar quando existir uma ligação substituta dentro do alcance.
+11. Romper uma zona sem ligação substituta válida e remover seus bônus.
+12. Conquistar uma estrela com colonizadores.
+13. Acumular pontuação e receber um novo desafio sem encerrar o universo.
 
 ## 15. Próximas especificações de design
 
