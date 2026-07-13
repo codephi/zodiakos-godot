@@ -32,6 +32,9 @@ func run() -> void:
 	_assert_distant_request_order()
 	_assert_exact_minimum_distance_is_valid(generator)
 	_assert_resolution_uses_local_winners(generator)
+	_assert_non_finite_candidates_are_rejected(generator)
+	_assert_sample_contains_empty_sector_and_cross_border_cluster(generator)
+	_assert_visual_type_distribution(generator)
 
 
 func _signature(sector) -> Array:
@@ -119,3 +122,53 @@ func _assert_resolution_uses_local_winners(generator) -> void:
 	if resolved.size() != 1:
 		return
 	assert_equal(resolved[0].id, &"winner", "lowest-priority local candidate survives")
+
+
+func _assert_non_finite_candidates_are_rejected(generator) -> void:
+	var invalid = Generator.Candidate.new()
+	invalid.id = &"invalid"
+	invalid.position = Vector2(NAN, 1.0)
+	invalid.priority = 0
+	var valid = Generator.Candidate.new()
+	valid.id = &"valid"
+	valid.position = Vector2(10.0, 10.0)
+	valid.priority = 1
+	var resolved = generator._resolve_candidates([invalid, valid])
+	assert_equal(resolved.size(), 1, "non-finite generated positions are rejected")
+	if resolved.size() == 1:
+		assert_equal(resolved[0].id, &"valid", "finite generated position remains")
+
+
+func _assert_sample_contains_empty_sector_and_cross_border_cluster(generator) -> void:
+	var found_empty := false
+	var found_cross_border_cluster := false
+	for y in range(-20, 21):
+		for x in range(-20, 21):
+			var sector = generator.generate_sector(Coordinate.new(x, y))
+			found_empty = found_empty or sector.stars.is_empty()
+			for star in sector.stars:
+				if star.source == &"cluster" and star.owner_sector.key() != sector.coordinate.key():
+					found_cross_border_cluster = true
+			if found_empty and found_cross_border_cluster:
+				break
+		if found_empty and found_cross_border_cluster:
+			break
+	assert_true(found_empty, "deterministic sample includes an empty sector")
+	assert_true(
+		found_cross_border_cluster,
+		"a cluster owned by a neighbor can cross the target sector border"
+	)
+
+
+func _assert_visual_type_distribution(generator) -> void:
+	var counts := {}
+	var owner = Coordinate.new(0, 0)
+	for index in 2000:
+		var visual_type = generator._visual_type(owner, "distribution:%d" % index)
+		counts[visual_type] = counts.get(visual_type, 0) + 1
+	for visual_type in Config.VISUAL_TYPES:
+		assert_true(counts.get(visual_type, 0) > 0, "%s appears in type distribution" % visual_type)
+	assert_true(
+		counts[&"yellow"] > counts[&"blue"],
+		"common yellow stars outnumber rare blue stars in deterministic sample"
+	)

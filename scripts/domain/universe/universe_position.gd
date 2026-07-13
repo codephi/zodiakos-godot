@@ -2,7 +2,8 @@ class_name UniversePosition
 extends RefCounted
 
 const SectorCoordinateType = preload("res://scripts/domain/universe/sector_coordinate.gd")
-const SECTOR_SIZE := 40.0
+const Scale = preload("res://scripts/domain/universe/universe_scale.gd")
+const SECTOR_SIZE := Scale.SECTOR_SIZE
 
 var sector
 var local: Vector2

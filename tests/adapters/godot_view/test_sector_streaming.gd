@@ -6,6 +6,19 @@ const PositionType = preload("res://scripts/domain/universe/universe_position.gd
 const View = preload("res://scripts/adapters/godot_view/star_field_view.gd")
 const Controller = preload("res://scripts/adapters/godot_view/sector_stream_controller.gd")
 const StarVisualType = preload("res://scripts/visuals/star_visual.gd")
+const StarDefinitionType = preload("res://scripts/domain/universe/star_definition.gd")
+const UniverseSectorType = preload("res://scripts/domain/universe/universe_sector.gd")
+
+
+class CountingGenerator extends RefCounted:
+	var calls_by_sector := {}
+	var delegate = Generator.new()
+
+
+	func generate_sector(coordinate):
+		var key: String = coordinate.key()
+		calls_by_sector[key] = calls_by_sector.get(key, 0) + 1
+		return delegate.generate_sector(coordinate)
 
 
 func run() -> void:
@@ -14,6 +27,9 @@ func run() -> void:
 	_test_sector_placement_preserves_integer_precision()
 	_test_unload_does_not_mutate_sector()
 	_test_star_resources_are_shared_and_neutral_ring_is_not_configured()
+	_test_stats_emit_only_when_observable_state_changes()
+	_test_active_sector_is_not_regenerated()
+	_test_invalid_visual_type_materializes_with_safe_fallback()
 
 
 func _test_bounded_streaming_and_deterministic_rematerialization() -> void:
@@ -111,3 +127,83 @@ func _test_star_resources_are_shared_and_neutral_ring_is_not_configured() -> voi
 	)
 	first_visual.free()
 	second_visual.free()
+
+
+func _test_stats_emit_only_when_observable_state_changes() -> void:
+	var view = View.new()
+	var controller = Controller.new()
+	var emissions := [0]
+	controller.stats_changed.connect(func(_sectors, _stars, _center): emissions[0] += 1)
+	controller.configure(
+		Generator.new(),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	assert_equal(emissions[0], 1, "configuration emits initial stream stats")
+	controller.process_pending(0)
+	controller.process_pending(0)
+	assert_equal(emissions[0], 1, "idle processing does not repeat unchanged stats")
+	controller.process_pending(1)
+	assert_equal(emissions[0], 2, "materialization emits changed stats")
+	controller.process_pending(0)
+	assert_equal(emissions[0], 2, "idle processing remains silent after a load")
+	controller.free()
+	view.free()
+
+
+func _test_active_sector_is_not_regenerated() -> void:
+	var generator = CountingGenerator.new()
+	var view = View.new()
+	var controller = Controller.new()
+	var origin = PositionType.new(Coordinate.new(), Vector2.ZERO)
+	controller.configure(generator, view, origin)
+	controller.process_pending(100)
+	var calls_after_load: Dictionary = generator.calls_by_sector.duplicate()
+	controller.update_center(origin)
+	controller.process_pending(100)
+	assert_equal(
+		generator.calls_by_sector,
+		calls_after_load,
+		"an active sector is not regenerated when the center remains unchanged"
+	)
+	controller.free()
+	view.free()
+
+
+func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
+	var coordinate = Coordinate.new()
+	var invalid_visual_star = StarDefinitionType.new(
+		&"invalid_visual",
+		coordinate,
+		Vector2(4.0, 6.0),
+		&"not_a_visual_type",
+		&"isolated",
+		coordinate,
+		1
+	)
+	var yellow_star = StarDefinitionType.new(
+		&"yellow_visual",
+		coordinate,
+		Vector2(8.0, 6.0),
+		&"yellow",
+		&"isolated",
+		coordinate,
+		2
+	)
+	var view = View.new()
+	view.materialize_sector(
+		UniverseSectorType.new(coordinate, [invalid_visual_star, yellow_star]),
+		coordinate
+	)
+	var visual = view.get_node("Sector_0_0/invalid_visual")
+	assert_true(visual.get_node("Body").mesh != null, "invalid visual type uses a safe mesh")
+	assert_true(
+		visual.get_node("Body").material_override != null,
+		"invalid visual type uses a safe material"
+	)
+	assert_true(
+		visual.get_node("Body").material_override
+		== view.get_node("Sector_0_0/yellow_visual/Body").material_override,
+		"invalid visual type reuses the canonical fallback material"
+	)
+	view.free()

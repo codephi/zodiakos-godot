@@ -48,9 +48,12 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 
 
 func _resolve_candidates(candidates: Array) -> Array:
+	var finite_candidates := candidates.filter(
+		func(candidate): return _is_finite_position(candidate.position)
+	)
 	var accepted := []
-	for candidate in candidates:
-		if _is_local_winner(candidate, candidates):
+	for candidate in finite_candidates:
+		if _is_local_winner(candidate, finite_candidates):
 			accepted.append(candidate)
 	accepted.sort_custom(_candidate_precedes)
 	return accepted
@@ -209,3 +212,7 @@ func _inside_target(position: Vector2) -> bool:
 		and position.x < Config.SECTOR_SIZE
 		and position.y < Config.SECTOR_SIZE
 	)
+
+
+func _is_finite_position(position: Vector2) -> bool:
+	return is_finite(position.x) and is_finite(position.y)

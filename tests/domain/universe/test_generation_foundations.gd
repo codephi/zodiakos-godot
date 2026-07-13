@@ -5,6 +5,8 @@ const Mixer = preload("res://scripts/domain/universe/seed_mixer.gd")
 const Star = preload("res://scripts/domain/universe/star_definition.gd")
 const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
 const Config = preload("res://scripts/domain/universe/universe_generator_config.gd")
+const PositionType = preload("res://scripts/domain/universe/universe_position.gd")
+const Scale = preload("res://scripts/domain/universe/universe_scale.gd")
 
 
 func run() -> void:
@@ -55,6 +57,7 @@ func run() -> void:
 	assert_equal(star.generator_version, Config.GENERATOR_VERSION, "star generator version")
 	assert_equal(sector.generator_version, Config.GENERATOR_VERSION, "sector generator version")
 	assert_equal(Config.SECTOR_SIZE, 40.0, "sector size")
+	_assert_sector_size_has_one_literal_source()
 	assert_equal(Config.GENERATOR_VERSION, 1, "generator version")
 	assert_equal(Config.MIN_CLUSTERS, 0, "minimum clusters")
 	assert_equal(Config.MAX_CLUSTERS, 2, "maximum clusters")
@@ -70,3 +73,8 @@ func run() -> void:
 		[&"yellow", &"red", &"white", &"orange", &"blue"],
 		"visual types"
 	)
+
+
+func _assert_sector_size_has_one_literal_source() -> void:
+	assert_equal(Config.SECTOR_SIZE, Scale.SECTOR_SIZE, "generator uses shared universe scale")
+	assert_equal(PositionType.SECTOR_SIZE, Config.SECTOR_SIZE, "public sector size APIs agree")

@@ -1,9 +1,10 @@
 class_name UniverseGeneratorConfig
 extends RefCounted
 
+const Scale = preload("res://scripts/domain/universe/universe_scale.gd")
 const GLOBAL_SEED := 0x5A4F4449414B4F53
 const GENERATOR_VERSION := 1
-const SECTOR_SIZE := 40.0
+const SECTOR_SIZE := Scale.SECTOR_SIZE
 const MIN_CLUSTERS := 0
 const MAX_CLUSTERS := 2
 const MIN_CLUSTER_STARS := 8

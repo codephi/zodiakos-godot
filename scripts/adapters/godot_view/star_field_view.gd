@@ -28,7 +28,10 @@ func materialize_sector(sector, origin) -> void:
 			definition.local_position.y
 		)
 		container.add_child(visual)
-		visual.configure(definition.visual_type)
+		var visual_type: StringName = definition.visual_type
+		if not Config.VISUAL_TYPES.has(visual_type):
+			visual_type = &"yellow"
+		visual.configure(visual_type)
 
 	active[key] = {
 		"coordinate": coordinate,

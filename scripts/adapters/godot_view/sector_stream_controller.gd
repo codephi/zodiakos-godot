@@ -13,6 +13,7 @@ var center
 var pending := []
 var queued := {}
 var projection = ProjectionScript.new()
+var _last_stats := []
 
 
 func configure(source_generator, target_view, initial_position) -> void:
@@ -48,5 +49,10 @@ func process_pending(limit := 2) -> void:
 
 
 func _emit_stats() -> void:
-	if center != null:
-		stats_changed.emit(view.active_sector_count(), view.star_count(), center.key())
+	if center == null:
+		return
+	var current_stats := [view.active_sector_count(), view.star_count(), center.key()]
+	if current_stats == _last_stats:
+		return
+	_last_stats = current_stats
+	stats_changed.emit(current_stats[0], current_stats[1], current_stats[2])
