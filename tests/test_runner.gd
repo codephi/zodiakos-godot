@@ -3,6 +3,7 @@ extends SceneTree
 const TEST_SCRIPTS := [
 	preload("res://tests/domain/universe/test_universe_coordinates.gd"),
 	preload("res://tests/domain/universe/test_generation_foundations.gd"),
+	preload("res://tests/domain/universe/test_universe_generator.gd"),
 	preload("res://tests/visuals/test_visual_palette.gd"),
 	preload("res://tests/visuals/test_geometric_components.gd"),
 	preload("res://tests/demo/test_geometric_visual_demo.gd"),
