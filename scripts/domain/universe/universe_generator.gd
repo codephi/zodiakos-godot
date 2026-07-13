@@ -1,201 +1,104 @@
 class_name UniverseGenerator
 extends RefCounted
 
-const Mixer = preload("res://scripts/domain/universe/seed_mixer.gd")
+const CandidateGenerator = preload(
+	"res://scripts/domain/universe/procedural_candidate_generator.gd"
+)
+const DensityModel = preload("res://scripts/domain/universe/galactic_density_model.gd")
+const Identity = preload("res://scripts/domain/universe/universe_identity.gd")
 const System = preload("res://scripts/domain/universe/stellar_system_definition.gd")
 const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
 const DefaultSettings = preload("res://config/game_settings.tres")
 
+var identity: UniverseIdentity
+var settings: Resource
+var metadata: CatalogMetadata
 
-class Candidate:
-	var id: StringName
-	var position: Vector2
-	var visual_type: StringName
-	var source: StringName
-	var owner
-	var priority: int
+var _density_model: GalacticDensityModel
+var _candidate_generator
 
 
-var global_seed: int
-var settings
-
-
-func _init(seed = null, configuration = DefaultSettings) -> void:
+func _init(
+	catalog_repository,
+	configuration: Resource = DefaultSettings,
+	seed = null
+) -> void:
 	settings = configuration
-	global_seed = settings.universe_global_seed if seed == null else seed
+	metadata = catalog_repository.metadata()
+	if metadata == null:
+		push_error("Universe generator requires valid catalog metadata")
+		return
+	var actual_seed: int = settings.universe_global_seed if seed == null else int(seed)
+	identity = Identity.new(
+		actual_seed,
+		settings.universe_generator_version,
+		metadata,
+		settings
+	)
+	_density_model = DensityModel.new(settings)
+	_candidate_generator = CandidateGenerator.new(
+		identity,
+		_density_model,
+		metadata,
+		settings
+	)
 
 
 func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
-	var candidates := _generate_nearby_candidates(coordinate)
-	var accepted := _resolve_candidates(candidates)
-
+	var target_origin := _sector_origin(coordinate)
+	var target_bounds := Rect2(
+		target_origin,
+		Vector2.ONE * settings.universe_sector_size
+	)
+	var accepted := _resolve_candidates(_procedural_candidates_near(coordinate, target_bounds))
 	var systems := []
 	for candidate in accepted:
-		if not _inside_target(candidate.position):
+		if not _inside_half_open(target_bounds, candidate.position):
 			continue
 		systems.append(
 			System.new(
 				candidate.id,
-				coordinate.offset(0, 0),
-				candidate.position,
+				coordinate,
+				candidate.position - target_origin,
 				candidate.visual_type,
 				candidate.source,
 				candidate.owner,
 				candidate.priority,
-				settings.universe_generator_version
+				settings.universe_generator_version,
+				0.0
 			)
 		)
-		if systems.size() == settings.universe_max_stars_per_sector:
-			break
-	return Sector.new(
-		coordinate.offset(0, 0),
-		systems,
-		settings.universe_generator_version
-	)
+	return Sector.new(coordinate, systems, settings.universe_generator_version)
+
+
+func _procedural_candidates_near(coordinate: SectorCoordinate, target_bounds: Rect2) -> Array:
+	var result := []
+	var spacing: float = settings.universe_minimum_system_distance
+	var expanded := target_bounds.grow(spacing)
+	for y in range(-1, 2):
+		for x in range(-1, 2):
+			var owner: SectorCoordinate = coordinate.offset(x, y)
+			for candidate in _candidate_generator.candidates_for_owner(owner):
+				if _inside_half_open(expanded, candidate.position):
+					result.append(candidate)
+	return result
 
 
 func _resolve_candidates(candidates: Array) -> Array:
-	var finite_candidates := candidates.filter(
-		func(candidate): return _is_finite_position(candidate.position)
+	var finite := candidates.filter(
+		func(candidate): return is_finite(candidate.position.x) and is_finite(candidate.position.y)
 	)
 	var accepted := []
-	for candidate in finite_candidates:
-		if _is_local_winner(candidate, finite_candidates):
+	for candidate in finite:
+		if _is_local_winner(candidate, finite):
 			accepted.append(candidate)
 	accepted.sort_custom(_candidate_precedes)
 	return accepted
 
 
-func _generate_nearby_candidates(target) -> Array:
-	var result := []
-	for owner_y in range(-1, 2):
-		for owner_x in range(-1, 2):
-			var owner = target.offset(owner_x, owner_y)
-			var owner_origin: Vector2 = (
-				Vector2(owner_x, owner_y) * float(settings.universe_sector_size)
-			)
-			_append_clusters(result, owner, owner_origin)
-			_append_isolated(result, owner, owner_origin)
-	return result.filter(_candidate_can_affect_target)
-
-
-func _append_clusters(result: Array, owner, owner_origin: Vector2) -> void:
-	var cluster_count := _rng(owner, "cluster_count").randi_range(
-		settings.universe_min_clusters,
-		settings.universe_max_clusters
-	)
-	for cluster_index in cluster_count:
-		var parameters := _indexed_rng(owner, "cluster_parameters", cluster_index)
-		var center := owner_origin + Vector2(
-			parameters.randf_range(0.0, settings.universe_sector_size),
-			parameters.randf_range(0.0, settings.universe_sector_size)
-		)
-		var radius := parameters.randf_range(
-			settings.universe_min_cluster_radius,
-			settings.universe_max_cluster_radius
-		)
-		var axis_ratio := parameters.randf_range(0.65, 1.0)
-		var ellipse_rotation := parameters.randf_range(0.0, TAU)
-		var system_count := parameters.randi_range(
-			settings.universe_min_cluster_stars,
-			settings.universe_max_cluster_stars
-		)
-		for system_index in system_count:
-			var system_rng := _indexed_rng(
-				owner,
-				"cluster_star",
-				cluster_index,
-				system_index
-			)
-			var distance := radius * pow(system_rng.randf(), 1.8)
-			var point := Vector2.from_angle(system_rng.randf_range(0.0, TAU))
-			point *= Vector2(distance, distance * axis_ratio)
-			_append_candidate(
-				result,
-				owner,
-				center + point.rotated(ellipse_rotation),
-				&"cluster",
-				cluster_index,
-				system_index
-			)
-
-
-func _append_isolated(result: Array, owner, owner_origin: Vector2) -> void:
-	var count := _rng(owner, "isolated_count").randi_range(
-		0,
-		settings.universe_max_isolated_stars
-	)
-	for system_index in count:
-		var system_rng := _indexed_rng(owner, "isolated_star", system_index)
-		var point := owner_origin + Vector2(
-			system_rng.randf_range(0.0, settings.universe_sector_size),
-			system_rng.randf_range(0.0, settings.universe_sector_size)
-		)
-		_append_candidate(result, owner, point, &"isolated", -1, system_index)
-
-
-func _append_candidate(
-	result: Array,
-	owner,
-	position: Vector2,
-	source: StringName,
-	cluster_index: int,
-	system_index: int
-) -> void:
-	var prefix: String
-	if source == &"cluster":
-		prefix = "cluster:%d:%d:%d:%d" % [owner.x, owner.y, cluster_index, system_index]
-	else:
-		prefix = "isolated:%d:%d:%d" % [owner.x, owner.y, system_index]
-
-	var candidate := Candidate.new()
-	candidate.id = StringName(prefix)
-	candidate.position = position
-	candidate.visual_type = _visual_type(owner, prefix)
-	candidate.source = source
-	candidate.owner = owner.offset(0, 0)
-	candidate.priority = Mixer.mix(global_seed, owner, prefix)
-	result.append(candidate)
-
-
-func _visual_type(owner, identity: String) -> StringName:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = Mixer.mix(global_seed, owner, "type:" + identity)
-	var total_weight: int = 0
-	for weight in settings.universe_visual_type_weights:
-		total_weight += weight
-	var roll := rng.randi_range(0, total_weight - 1)
-	var cumulative_weight: int = 0
-	for index in settings.universe_visual_types.size():
-		cumulative_weight += settings.universe_visual_type_weights[index]
-		if roll < cumulative_weight:
-			return settings.universe_visual_types[index]
-	return settings.universe_visual_types.back()
-
-
-func _rng(owner, tag: String) -> RandomNumberGenerator:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = Mixer.mix(global_seed, owner, tag)
-	return rng
-
-
-func _indexed_rng(
-	owner,
-	tag: String,
-	first := -1,
-	second := -1
-) -> RandomNumberGenerator:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = Mixer.mix(global_seed, owner, tag, first, second)
-	return rng
-
-
 func _is_local_winner(candidate, candidates: Array) -> bool:
-	var minimum_distance: float = settings.universe_minimum_star_distance
-	var minimum_squared: float = (
-		minimum_distance
-		* minimum_distance
-	)
+	var spacing: float = settings.universe_minimum_system_distance
+	var minimum_squared := spacing * spacing
 	for other in candidates:
 		if other == candidate:
 			continue
@@ -212,27 +115,14 @@ func _candidate_precedes(left, right) -> bool:
 	return String(left.id) < String(right.id)
 
 
-func _candidate_can_affect_target(candidate) -> bool:
+func _inside_half_open(bounds: Rect2, position: Vector2) -> bool:
 	return (
-		candidate.position.x >= -settings.universe_minimum_star_distance
-		and candidate.position.y >= -settings.universe_minimum_star_distance
-		and candidate.position.x < (
-			settings.universe_sector_size + settings.universe_minimum_star_distance
-		)
-		and candidate.position.y < (
-			settings.universe_sector_size + settings.universe_minimum_star_distance
-		)
+		position.x >= bounds.position.x
+		and position.y >= bounds.position.y
+		and position.x < bounds.end.x
+		and position.y < bounds.end.y
 	)
 
 
-func _inside_target(position: Vector2) -> bool:
-	return (
-		position.x >= 0.0
-		and position.y >= 0.0
-		and position.x < settings.universe_sector_size
-		and position.y < settings.universe_sector_size
-	)
-
-
-func _is_finite_position(position: Vector2) -> bool:
-	return is_finite(position.x) and is_finite(position.y)
+func _sector_origin(coordinate: SectorCoordinate) -> Vector2:
+	return Vector2(coordinate.x, coordinate.y) * settings.universe_sector_size

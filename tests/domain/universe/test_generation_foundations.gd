@@ -62,15 +62,8 @@ func run() -> void:
 	assert_equal(sector.generator_version, version, "sector generator version")
 	assert_equal(Settings.universe_sector_size, 40.0, "sector size")
 	assert_equal(Settings.universe_generator_version, 1, "generator version")
-	assert_equal(Settings.universe_min_clusters, 0, "minimum clusters")
-	assert_equal(Settings.universe_max_clusters, 2, "maximum clusters")
-	assert_equal(Settings.universe_min_cluster_stars, 8, "minimum cluster stars")
-	assert_equal(Settings.universe_max_cluster_stars, 20, "maximum cluster stars")
-	assert_equal(Settings.universe_min_cluster_radius, 8.0, "minimum cluster radius")
-	assert_equal(Settings.universe_max_cluster_radius, 18.0, "maximum cluster radius")
-	assert_equal(Settings.universe_max_isolated_stars, 3, "maximum isolated stars")
-	assert_equal(Settings.universe_minimum_star_distance, 1.5, "minimum star distance")
-	assert_equal(Settings.universe_max_stars_per_sector, 64, "maximum stars per sector")
+	assert_equal(Settings.universe_minimum_system_distance, 1.5, "minimum system distance")
+	assert_equal(Settings.galaxy_max_candidate_systems_per_sector, 32, "candidate cap")
 	assert_equal(
 		Settings.universe_visual_types,
 		[&"yellow", &"red", &"white", &"orange", &"blue"],

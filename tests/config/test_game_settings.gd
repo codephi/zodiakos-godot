@@ -56,14 +56,13 @@ func run() -> void:
 	invalid.camera_min_zoom = invalid.camera_max_zoom + 1.0
 	invalid.camera_zoom_factor = 1.0
 	invalid.stream_min_aspect_ratio = 0.0
-	invalid.universe_min_clusters = invalid.universe_max_clusters + 1
 	invalid.galaxy_bar_axis_ratio = 0.0
 	var empty_visual_types: Array[StringName] = []
 	var empty_visual_weights: Array[int] = []
 	invalid.universe_visual_types = empty_visual_types
 	invalid.universe_visual_type_weights = empty_visual_weights
 	var errors: PackedStringArray = invalid.validation_errors()
-	assert_true(errors.size() >= 6, "validation reports every invalid relationship")
+	assert_true(errors.size() >= 5, "validation reports every invalid relationship")
 	assert_true(not invalid.is_valid(), "invalid settings are rejected")
 
 	_assert_validation_error(

@@ -13,9 +13,14 @@ const UniverseSectorType = preload("res://scripts/domain/universe/universe_secto
 const Settings = preload("res://config/game_settings.tres")
 
 
+class FakeRepository extends ScientificCatalogRepository:
+	func metadata() -> CatalogMetadata:
+		return CatalogMetadata.new(1, 2, 1)
+
+
 class CountingGenerator extends RefCounted:
 	var calls_by_sector := {}
-	var delegate = Generator.new()
+	var delegate = Generator.new(FakeRepository.new())
 
 
 	func generate_sector(coordinate):
@@ -82,7 +87,7 @@ func run() -> void:
 func _test_bounded_streaming_and_deterministic_rematerialization() -> void:
 	var view = View.new()
 	var controller = Controller.new()
-	var generator = Generator.new()
+	var generator = Generator.new(FakeRepository.new())
 	controller.configure(generator, view, PositionType.new(Coordinate.new(), Vector2.ZERO))
 	controller.process_pending()
 	assert_equal(view.active_sector_count(), 2, "default batch loads at most two sectors")
@@ -109,7 +114,7 @@ func _test_rapid_center_change_discards_stale_pending_sectors() -> void:
 	var view = View.new()
 	var controller = Controller.new()
 	controller.configure(
-		Generator.new(),
+		Generator.new(FakeRepository.new()),
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
@@ -127,7 +132,7 @@ func _test_sector_placement_preserves_integer_precision() -> void:
 	var large_coordinate := 9007199254740992
 	var coordinate = Coordinate.new(large_coordinate + 1, large_coordinate - 1)
 	view.materialize_sector(
-		Generator.new().generate_sector(coordinate),
+		Generator.new(FakeRepository.new()).generate_sector(coordinate),
 		Coordinate.new(large_coordinate, large_coordinate)
 	)
 	assert_equal(
@@ -140,7 +145,7 @@ func _test_sector_placement_preserves_integer_precision() -> void:
 
 func _test_unload_does_not_mutate_sector() -> void:
 	var coordinate = Coordinate.new(3, -4)
-	var sector = Generator.new().generate_sector(coordinate)
+	var sector = Generator.new(FakeRepository.new()).generate_sector(coordinate)
 	var signature_before: Array = sector.systems.map(func(system): return String(system.id))
 	var view = View.new()
 	view.materialize_sector(sector, coordinate)
@@ -182,7 +187,7 @@ func _test_stats_emit_only_when_observable_state_changes() -> void:
 	var emissions := [0]
 	controller.stats_changed.connect(func(_sectors, _systems, _center): emissions[0] += 1)
 	controller.configure(
-		Generator.new(),
+		Generator.new(FakeRepository.new()),
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
@@ -252,7 +257,7 @@ func _test_view_update_reconciles_even_when_radii_are_unchanged() -> void:
 	var view = TrackingView.new()
 	var controller = Controller.new()
 	controller.configure(
-		Generator.new(),
+		Generator.new(FakeRepository.new()),
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
@@ -344,7 +349,7 @@ func _test_extreme_positive_viewport_is_safely_bounded() -> void:
 	var controller = Controller.new()
 	var view = View.new()
 	controller.configure(
-		Generator.new(),
+		Generator.new(FakeRepository.new()),
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
@@ -411,7 +416,7 @@ func _test_stream_uses_injected_settings() -> void:
 	var view = View.new()
 	var controller = Controller.new(custom)
 	controller.configure(
-		Generator.new(null, custom),
+		Generator.new(FakeRepository.new(), custom),
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO, custom.universe_sector_size)
 	)

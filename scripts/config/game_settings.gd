@@ -21,16 +21,7 @@ extends Resource
 @export var universe_global_seed: int
 @export var universe_generator_version: int
 @export var universe_sector_size: float
-@export var universe_min_clusters: int
-@export var universe_max_clusters: int
-@export var universe_min_cluster_stars: int
-@export var universe_max_cluster_stars: int
-@export var universe_min_cluster_radius: float
-@export var universe_max_cluster_radius: float
-@export var universe_max_isolated_stars: int
-@export var universe_minimum_star_distance: float
 @export var universe_minimum_system_distance: float
-@export var universe_max_stars_per_sector: int
 @export var universe_visual_types: Array[StringName]
 @export var universe_visual_type_weights: Array[int]
 
@@ -133,36 +124,11 @@ func _validate_streaming(errors: PackedStringArray) -> void:
 func _validate_universe(errors: PackedStringArray) -> void:
 	_require_positive(errors, "universe_generator_version", universe_generator_version)
 	_require_positive(errors, "universe_sector_size", universe_sector_size)
-	_require_range(errors, "universe clusters", universe_min_clusters, universe_max_clusters)
-	_require_range(
-		errors,
-		"universe cluster stars",
-		universe_min_cluster_stars,
-		universe_max_cluster_stars
-	)
-	_require_float_range(
-		errors,
-		"universe cluster radius",
-		universe_min_cluster_radius,
-		universe_max_cluster_radius
-	)
-	_require_nonnegative(errors, "universe_max_isolated_stars", universe_max_isolated_stars)
-	_require_positive(
-		errors,
-		"universe_minimum_star_distance",
-		universe_minimum_star_distance
-	)
 	_require_positive(
 		errors,
 		"universe_minimum_system_distance",
 		universe_minimum_system_distance
 	)
-	var required_capacity := (
-		universe_max_clusters * universe_max_cluster_stars
-		+ universe_max_isolated_stars
-	)
-	if universe_max_stars_per_sector < required_capacity:
-		errors.append("universe_max_stars_per_sector is below configured generation capacity")
 	if universe_visual_types.is_empty():
 		errors.append("universe_visual_types must not be empty")
 	if universe_visual_types.size() != universe_visual_type_weights.size():
@@ -252,23 +218,3 @@ func _require_positive(errors: PackedStringArray, field_name: String, value: flo
 func _require_nonnegative(errors: PackedStringArray, field_name: String, value: float) -> void:
 	if value < 0.0:
 		errors.append("%s must be nonnegative" % field_name)
-
-
-func _require_range(
-	errors: PackedStringArray,
-	field_name: String,
-	minimum: int,
-	maximum: int
-) -> void:
-	if minimum < 0 or minimum > maximum:
-		errors.append("%s must satisfy 0 <= min <= max" % field_name)
-
-
-func _require_float_range(
-	errors: PackedStringArray,
-	field_name: String,
-	minimum: float,
-	maximum: float
-) -> void:
-	if minimum <= 0.0 or minimum > maximum:
-		errors.append("%s must satisfy 0 < min <= max" % field_name)

@@ -4,6 +4,9 @@ const CameraType = preload("res://scripts/adapters/godot_view/map_camera_control
 const ViewType = preload("res://scripts/adapters/godot_view/star_field_view.gd")
 const StreamType = preload("res://scripts/adapters/godot_view/sector_stream_controller.gd")
 const Generator = preload("res://scripts/domain/universe/universe_generator.gd")
+const CatalogRepository = preload(
+	"res://scripts/adapters/persistence/sqlite/sqlite_scientific_catalog_repository.gd"
+)
 const Settings = preload("res://config/game_settings.tres")
 
 var stats_label: Label
@@ -30,7 +33,7 @@ func _init() -> void:
 	map_camera.logical_position_changed.connect(stream.update_center)
 	map_camera.zoom_changed.connect(_on_zoom_changed)
 	stream.stats_changed.connect(_update_stats)
-	stream.configure(Generator.new(null, Settings), sector_view, map_camera.logical_position)
+	_configure_universe_stream()
 
 
 func _ready() -> void:
@@ -63,6 +66,23 @@ func _add_hud() -> void:
 	stats_label.name = "Stats"
 	stats_label.position = Vector2(16, 16)
 	layer.add_child(stats_label)
+
+
+func _configure_universe_stream() -> void:
+	var repository = CatalogRepository.new()
+	if not repository.open():
+		_show_catalog_error("Could not open the scientific catalog")
+		return
+	var generator = Generator.new(repository, Settings)
+	repository.close()
+	if generator.identity == null:
+		_show_catalog_error("Scientific catalog metadata is unavailable")
+		return
+	stream.configure(generator, sector_view, map_camera.logical_position)
+
+
+func _show_catalog_error(message: String) -> void:
+	stats_label.text = "Catalog error: %s" % message
 
 
 func _update_stats(sectors: int, systems: int, center_key: String) -> void:
