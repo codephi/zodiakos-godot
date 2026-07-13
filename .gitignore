@@ -1,3 +1,4 @@
 .worktrees/
 .godot/
 .superpowers/
+addons/godot-sqlite/bin/~*.TMP
