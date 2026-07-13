@@ -7,7 +7,7 @@ signal zoom_changed(new_size: float)
 const PositionType = preload("res://scripts/domain/universe/universe_position.gd")
 const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
 const MINIMUM_SIZE := 20.0
-const MAXIMUM_SIZE := 90.0
+const MAXIMUM_SIZE := 300.0
 const ZOOM_FACTOR := 0.88
 const CAMERA_HEIGHT := 40.0
 const DRAG_THRESHOLD_PIXELS := 4.0
