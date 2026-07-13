@@ -1,6 +1,7 @@
 extends "res://tests/test_case.gd"
 
 const DemoScene = preload("res://scenes/demo/geometric_visual_demo.tscn")
+const Settings = preload("res://config/game_settings.tres")
 
 
 func run() -> void:
@@ -15,4 +16,12 @@ func run() -> void:
 	assert_equal(demo.get_node("Planets").get_child_count(), 4, "demo shows four planet types")
 	for planet in demo.get_node("Planets").get_children():
 		assert_true(planet.position.z <= 5.0, "planet remains inside preview depth")
+	assert_equal(demo.get_node("Camera").position, Settings.demo_camera_position, "camera uses settings")
+	assert_true(
+		is_equal_approx(
+			demo.get_node("DirectionalLight").light_energy,
+			Settings.demo_light_energy
+		),
+		"light uses settings"
+	)
 	demo.free()

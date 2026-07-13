@@ -2,10 +2,15 @@ class_name StarFieldView
 extends Node3D
 
 const StarVisualType = preload("res://scripts/visuals/star_visual.gd")
-const Config = preload("res://scripts/domain/universe/universe_generator_config.gd")
+const DefaultSettings = preload("res://config/game_settings.tres")
 
+var settings
 var active := {}
 var render_origin
+
+
+func _init(configuration = DefaultSettings) -> void:
+	settings = configuration
 
 
 func materialize_sector(sector, origin) -> void:
@@ -19,7 +24,7 @@ func materialize_sector(sector, origin) -> void:
 	container.name = "Sector_%d_%d" % [coordinate.x, coordinate.y]
 	add_child(container)
 	for definition in sector.stars:
-		var visual := StarVisualType.new()
+		var visual := StarVisualType.new(settings)
 		visual.name = String(definition.id)
 		visual.set_meta("star_id", definition.id)
 		visual.position = Vector3(
@@ -29,8 +34,8 @@ func materialize_sector(sector, origin) -> void:
 		)
 		container.add_child(visual)
 		var visual_type: StringName = definition.visual_type
-		if not Config.VISUAL_TYPES.has(visual_type):
-			visual_type = &"yellow"
+		if not settings.universe_visual_types.has(visual_type):
+			visual_type = settings.universe_visual_types[0]
 		visual.configure(visual_type)
 
 	active[key] = {
@@ -97,7 +102,7 @@ func _reposition(entry: Dictionary) -> void:
 	var sector_delta_x: int = coordinate.x - render_origin.x
 	var sector_delta_y: int = coordinate.y - render_origin.y
 	entry.node.position = Vector3(
-		float(sector_delta_x) * Config.SECTOR_SIZE,
+		float(sector_delta_x) * settings.universe_sector_size,
 		0.0,
-		float(sector_delta_y) * Config.SECTOR_SIZE
+		float(sector_delta_y) * settings.universe_sector_size
 	)

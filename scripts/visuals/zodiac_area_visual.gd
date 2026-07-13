@@ -2,11 +2,14 @@ class_name ZodiacAreaVisual
 extends Node3D
 
 const Materials = preload("res://scripts/visuals/material_factory.gd")
+const DefaultSettings = preload("res://config/game_settings.tres")
 
 var body: MeshInstance3D
+var settings
 
 
-func _init() -> void:
+func _init(configuration = DefaultSettings) -> void:
+	settings = configuration
 	body = MeshInstance3D.new()
 	body.name = "Body"
 	add_child(body)
@@ -29,7 +32,7 @@ func configure(points: PackedVector3Array, color: Color) -> void:
 	var area_mesh := ArrayMesh.new()
 	area_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	var area_color := color
-	area_color.a = 0.22
+	area_color.a = settings.zodiac_area_opacity
 	body.mesh = area_mesh
-	body.material_override = Materials.create(area_color, false, true, true)
+	body.material_override = Materials.create(area_color, false, true, true, settings)
 	visible = true

@@ -5,9 +5,8 @@ const ShipVisual = preload("res://scripts/visuals/ship_visual.gd")
 const PlanetVisual = preload("res://scripts/visuals/planet_visual.gd")
 const SegmentVisual = preload("res://scripts/visuals/connection_segment.gd")
 const ZodiacVisual = preload("res://scripts/visuals/zodiac_area_visual.gd")
+const Settings = preload("res://config/game_settings.tres")
 
-const OWNER_COLOR := Color("55a7ff")
-const STAR_TYPES: Array[StringName] = [&"blue", &"white", &"yellow", &"orange", &"red"]
 const STAR_POSITIONS := [
 	Vector3(-8.0, 0.35, -3.0),
 	Vector3(-4.0, 0.35, 2.0),
@@ -15,10 +14,6 @@ const STAR_POSITIONS := [
 	Vector3(4.0, 0.35, 2.0),
 	Vector3(8.0, 0.35, -3.0),
 ]
-const SHIP_CLASSES: Array[StringName] = [&"expedition", &"colony", &"war"]
-const PLANET_TYPES: Array[StringName] = [&"rocky", &"gas", &"ice", &"volcanic"]
-
-
 func _init() -> void:
 	_add_environment()
 	var stars := _add_container("Stars")
@@ -42,16 +37,16 @@ func _add_container(node_name: String) -> Node3D:
 func _add_environment() -> void:
 	var camera := Camera3D.new()
 	camera.name = "Camera"
-	camera.position = Vector3(0.0, 19.0, 20.0)
-	camera.rotation_degrees = Vector3(-43.0, 0.0, 0.0)
-	camera.fov = 48.0
+	camera.position = Settings.demo_camera_position
+	camera.rotation_degrees = Settings.demo_camera_rotation_degrees
+	camera.fov = Settings.demo_camera_fov
 	camera.current = true
 	add_child(camera)
 
 	var light := DirectionalLight3D.new()
 	light.name = "DirectionalLight"
-	light.rotation_degrees = Vector3(-55.0, -30.0, 0.0)
-	light.light_energy = 1.4
+	light.rotation_degrees = Settings.demo_light_rotation_degrees
+	light.light_energy = Settings.demo_light_energy
 	light.shadow_enabled = true
 	add_child(light)
 
@@ -59,16 +54,16 @@ func _add_environment() -> void:
 	world.name = "WorldEnvironment"
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("07111f")
+	environment.background_color = Settings.demo_background_color
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("6688aa")
-	environment.ambient_light_energy = 1.2
+	environment.ambient_light_color = Settings.demo_ambient_light_color
+	environment.ambient_light_energy = Settings.demo_ambient_light_energy
 	world.environment = environment
 	add_child(world)
 
 
 func _add_zodiac_area() -> void:
-	var area := ZodiacVisual.new()
+	var area := ZodiacVisual.new(Settings)
 	area.name = "ZodiacArea"
 	add_child(area)
 	area.configure(
@@ -79,57 +74,61 @@ func _add_zodiac_area() -> void:
 				Vector3(8.0, -0.2, -3.0),
 			]
 		),
-		OWNER_COLOR
+		Settings.demo_owner_color
 	)
 
 
 func _add_stars(parent: Node3D) -> void:
-	for index in STAR_TYPES.size():
-		var star := StarVisual.new()
-		star.name = "%sStar" % String(STAR_TYPES[index]).capitalize()
+	for index in Settings.demo_star_types.size():
+		var star := StarVisual.new(Settings)
+		star.name = "%sStar" % String(Settings.demo_star_types[index]).capitalize()
 		star.position = STAR_POSITIONS[index]
 		parent.add_child(star)
-		star.configure(STAR_TYPES[index], OWNER_COLOR, index == 2)
+		star.configure(
+			Settings.demo_star_types[index],
+			Settings.demo_owner_color,
+			index == 2
+		)
 
 
 func _add_ships(parent: Node3D) -> void:
-	for index in SHIP_CLASSES.size():
-		var ship := ShipVisual.new()
-		ship.name = "%sShip" % String(SHIP_CLASSES[index]).capitalize()
+	for index in Settings.demo_ship_classes.size():
+		var ship := ShipVisual.new(Settings)
+		ship.name = "%sShip" % String(Settings.demo_ship_classes[index]).capitalize()
 		ship.position = Vector3(-3.0 + index * 3.0, 0.65, 0.5)
 		parent.add_child(ship)
-		ship.configure(SHIP_CLASSES[index], OWNER_COLOR)
+		ship.configure(Settings.demo_ship_classes[index], Settings.demo_owner_color)
 		ship.set_direction(Vector3(1.0, 0.0, -1.0))
 
 
 func _add_planets(parent: Node3D) -> void:
-	for index in PLANET_TYPES.size():
-		var planet := PlanetVisual.new()
-		planet.name = "%sPlanet" % String(PLANET_TYPES[index]).capitalize()
+	for index in Settings.demo_planet_types.size():
+		var planet := PlanetVisual.new(Settings)
+		planet.name = "%sPlanet" % String(Settings.demo_planet_types[index]).capitalize()
 		planet.position = Vector3(-4.5 + index * 3.0, 0.45, -6.0)
 		parent.add_child(planet)
-		planet.configure(PLANET_TYPES[index], 0.55 + index * 0.08)
+		planet.configure(Settings.demo_planet_types[index], 0.55 + index * 0.08)
 
 
 func _add_connections(parent: Node3D) -> void:
 	var zodiac_points := [STAR_POSITIONS[0], STAR_POSITIONS[2], STAR_POSITIONS[4]]
 	for index in zodiac_points.size():
-		var segment := SegmentVisual.new()
+		var segment := SegmentVisual.new(Settings)
 		segment.name = "TerritorySegment%d" % (index + 1)
 		parent.add_child(segment)
 		segment.configure_between(
 			zodiac_points[index],
 			zodiac_points[(index + 1) % zodiac_points.size()],
-			0.09,
-			OWNER_COLOR
+			Settings.demo_territory_line_thickness,
+			Settings.demo_owner_color
 		)
 
-	var route := SegmentVisual.new()
+	var route := SegmentVisual.new(Settings)
 	route.name = "TemporaryRoute"
 	parent.add_child(route)
 	route.configure_between(
 		Vector3(-3.0, 0.5, 0.5),
 		STAR_POSITIONS[3],
-		0.04,
-		Color("ffdf80")
+		Settings.demo_route_line_thickness,
+		Settings.demo_route_color
 	)

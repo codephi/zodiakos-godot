@@ -1,6 +1,7 @@
 extends "res://tests/test_case.gd"
 
 const Demo = preload("res://scenes/demo/infinite_star_map_demo.tscn")
+const Settings = preload("res://config/game_settings.tres")
 
 
 func run() -> void:
@@ -19,6 +20,11 @@ func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> vo
 	assert_true(stream != null, "stream controller exists")
 	assert_true(sector_root != null, "sector root exists")
 	assert_true(demo.get_node_or_null("DebugHud/Stats") != null, "debug HUD exists")
+	assert_equal(
+		demo.get_node("WorldEnvironment").environment.background_color,
+		Settings.map_background_color,
+		"map environment uses central settings"
+	)
 	assert_equal(sector_root.active_sector_count(), 0, "initial load starts progressively")
 	stream.process_pending(1)
 	assert_equal(sector_root.active_sector_count(), 1, "one pending sector loads")

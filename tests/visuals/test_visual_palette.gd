@@ -1,6 +1,7 @@
 extends "res://tests/test_case.gd"
 
 const VisualPalette = preload("res://scripts/visuals/visual_palette.gd")
+const Settings = preload("res://config/game_settings.tres")
 
 
 func run() -> void:
@@ -26,4 +27,17 @@ func run() -> void:
 		VisualPalette.normalize_owner_color(Color(0.0, 0.0, 0.0, 0.0)),
 		Color(0.5, 0.5, 0.5, 1.0),
 		"owner fallback"
+	)
+	var custom = Settings.duplicate(true)
+	custom.ship_styles[&"expedition"].scale = 2.0
+	custom.neutral_owner_color = Color.MAGENTA
+	assert_equal(
+		VisualPalette.ship_style(&"expedition", custom).scale,
+		2.0,
+		"ship style comes from injected settings"
+	)
+	assert_equal(
+		VisualPalette.normalize_owner_color(Color.TRANSPARENT, custom),
+		Color.MAGENTA,
+		"owner fallback comes from injected settings"
 	)

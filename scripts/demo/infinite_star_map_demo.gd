@@ -17,7 +17,7 @@ func _init() -> void:
 	map_camera.name = "MapCamera"
 	add_child(map_camera)
 
-	sector_view = ViewType.new()
+	sector_view = ViewType.new(Settings)
 	sector_view.name = "SectorRoot"
 	add_child(sector_view)
 
@@ -47,10 +47,10 @@ func _add_environment() -> void:
 	world.name = "WorldEnvironment"
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("07111f")
+	environment.background_color = Settings.map_background_color
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color.WHITE
-	environment.ambient_light_energy = 1.0
+	environment.ambient_light_color = Settings.map_ambient_light_color
+	environment.ambient_light_energy = Settings.map_ambient_light_energy
 	world.environment = environment
 	add_child(world)
 
