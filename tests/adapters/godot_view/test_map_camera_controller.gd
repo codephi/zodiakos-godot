@@ -1,16 +1,45 @@
 extends "res://tests/test_case.gd"
 
 const CameraController = preload("res://scripts/adapters/godot_view/map_camera_controller.gd")
+const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
 const Settings = preload("res://config/game_settings.tres")
+const UniversePositionType = preload("res://scripts/domain/universe/universe_position.gd")
 
 
 func run() -> void:
+	_test_set_logical_position_copies_normalizes_and_emits()
 	_test_drag_threshold_and_floating_position()
 	_test_zoom_clamps_and_signal()
 	_test_zoom_anchors_to_current_cursor()
 	_test_zoom_uses_each_scroll_events_current_cursor()
 	_test_zoom_limits_and_invalid_viewport_do_not_move_camera()
 	_test_camera_uses_injected_settings()
+
+
+func _test_set_logical_position_copies_normalizes_and_emits() -> void:
+	var camera = CameraController.new()
+	var supplied = UniversePositionType.new(
+		Coordinate.new(202, 0),
+		Vector2.ZERO,
+		Settings.universe_sector_size
+	)
+	supplied.local = Vector2(70.0, 0.0)
+	var emitted: Array = []
+	camera.logical_position_changed.connect(func(position): emitted.append(position))
+
+	camera.set_logical_position(supplied)
+
+	assert_equal(camera.logical_position.sector.key(), "203:0", "setter normalizes sector")
+	assert_equal(camera.logical_position.local, Vector2(30.0, 0.0), "setter normalizes local position")
+	assert_equal(camera.position.x, 30.0, "setter synchronizes the visual transform")
+	assert_equal(emitted.size(), 1, "setter emits one logical position change")
+	supplied.local = Vector2.ZERO
+	assert_equal(
+		camera.logical_position.local,
+		Vector2(30.0, 0.0),
+		"camera does not retain the supplied mutable position"
+	)
+	camera.free()
 
 
 func _test_drag_threshold_and_floating_position() -> void:

@@ -57,6 +57,16 @@ func end_drag() -> void:
 	drag_accumulator = Vector2.ZERO
 
 
+func set_logical_position(value) -> void:
+	logical_position = PositionType.new(
+		value.sector.offset(0, 0),
+		value.local,
+		settings.universe_sector_size
+	)
+	sync_visual_position()
+	logical_position_changed.emit(logical_position)
+
+
 func accumulate_drag_pixels(delta: Vector2, viewport_height: float) -> void:
 	drag_accumulator += delta
 	if not drag_active and drag_accumulator.length() < settings.camera_drag_threshold_pixels:
