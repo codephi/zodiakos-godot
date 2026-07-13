@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="Zodiakos"
-config/features=PackedStringArray("4.7")
 run/main_scene="res://scenes/demo/infinite_star_map_demo.tscn"
+config/features=PackedStringArray("4.7")
 
 [display]
 
