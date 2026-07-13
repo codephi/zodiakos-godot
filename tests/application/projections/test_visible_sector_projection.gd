@@ -7,7 +7,19 @@ const ProjectionScript = preload("res://scripts/application/projections/visible_
 func run() -> void:
 	var projection = ProjectionScript.new()
 	var center = Coordinate.new(4, -2)
-	var order = projection.load_order(center, {}, {})
+	assert_equal(
+		projection.load_radii(300.0, 16.0 / 9.0),
+		Vector2i(8, 5),
+		"maximum zoom covers 16:9 viewport plus one sector margin"
+	)
+	var maximum_order = projection.load_order(center, {}, {}, Vector2i(8, 5))
+	assert_equal(
+		maximum_order.size(),
+		187,
+		"rectangular maximum coverage contains 17 by 11 sectors"
+	)
+
+	var order = projection.load_order(center, {}, {}, Vector2i(2, 2))
 	assert_equal(order.size(), 25, "load radius contains 25 sectors")
 	assert_equal(order[0].key(), center.key(), "center loads first")
 	assert_equal(
@@ -28,16 +40,29 @@ func run() -> void:
 	var active = {center.key(): true}
 	var queued_coordinate = center.offset(-1, -1)
 	var queued = {queued_coordinate.key(): true}
-	var filtered_order = projection.load_order(center, active, queued)
+	var filtered_order = projection.load_order(center, active, queued, Vector2i(2, 2))
 	assert_equal(filtered_order.size(), 23, "active and queued keys are excluded")
 	assert_true(not _keys(filtered_order).has(center.key()), "active key is absent")
 	assert_true(not _keys(filtered_order).has(queued_coordinate.key()), "queued key is absent")
 
 	var distance_three = center.offset(3, 3)
 	var far = [center.offset(4, 0), center.offset(0, -4), distance_three]
-	var unload = projection.unload_coordinates(center, far)
+	var unload = projection.unload_coordinates(center, far, Vector2i(3, 3))
 	assert_equal(unload.size(), 2, "only distance above three unloads")
 	assert_true(not unload.has(distance_three), "distance three remains active")
+
+	var rectangular_unload = projection.unload_coordinates(
+		center,
+		[center.offset(8, 0), center.offset(0, 6), center.offset(9, 0)],
+		Vector2i(9, 6)
+	)
+	assert_equal(rectangular_unload.size(), 0, "coordinates inside rectangular radius remain")
+	var beyond_rectangular = center.offset(0, 7)
+	assert_equal(
+		projection.unload_coordinates(center, [beyond_rectangular], Vector2i(9, 6)),
+		[beyond_rectangular],
+		"coordinate beyond either rectangular axis unloads"
+	)
 
 
 func _keys(coordinates: Array) -> Array:

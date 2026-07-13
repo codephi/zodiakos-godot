@@ -1,14 +1,33 @@
 class_name VisibleSectorProjection
 extends RefCounted
 
-const LOAD_RADIUS := 2
-const UNLOAD_RADIUS := 3
+const Scale = preload("res://scripts/domain/universe/universe_scale.gd")
+const LOAD_MARGIN := 1
+const UNLOAD_MARGIN := 1
 
 
-func load_order(center, active_keys: Dictionary, queued_keys: Dictionary) -> Array:
+func load_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
+	var half_height := maxf(orthographic_size, 0.0) * 0.5
+	var half_width := half_height * maxf(aspect_ratio, 0.0)
+	return Vector2i(
+		ceili(half_width / Scale.SECTOR_SIZE) + LOAD_MARGIN,
+		ceili(half_height / Scale.SECTOR_SIZE) + LOAD_MARGIN
+	)
+
+
+func unload_radii(load: Vector2i) -> Vector2i:
+	return load + Vector2i(UNLOAD_MARGIN, UNLOAD_MARGIN)
+
+
+func load_order(
+	center,
+	active_keys: Dictionary,
+	queued_keys: Dictionary,
+	radii := Vector2i(2, 2)
+) -> Array:
 	var result := []
-	for y in range(-LOAD_RADIUS, LOAD_RADIUS + 1):
-		for x in range(-LOAD_RADIUS, LOAD_RADIUS + 1):
+	for y in range(-radii.y, radii.y + 1):
+		for x in range(-radii.x, radii.x + 1):
 			var coordinate = center.offset(x, y)
 			var key: String = coordinate.key()
 			if not active_keys.has(key) and not queued_keys.has(key):
@@ -25,7 +44,15 @@ func load_order(center, active_keys: Dictionary, queued_keys: Dictionary) -> Arr
 	return result
 
 
-func unload_coordinates(center, active_coordinates: Array) -> Array:
+func unload_coordinates(
+	center,
+	active_coordinates: Array,
+	radii := Vector2i(3, 3)
+) -> Array:
 	return active_coordinates.filter(
-		func(coordinate): return coordinate.chebyshev_distance(center) > UNLOAD_RADIUS
+		func(coordinate):
+			return (
+				absi(coordinate.x - center.x) > radii.x
+				or absi(coordinate.y - center.y) > radii.y
+			)
 	)

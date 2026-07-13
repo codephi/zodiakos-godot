@@ -29,6 +29,7 @@ func run() -> void:
 	_test_star_resources_are_shared_and_neutral_ring_is_not_configured()
 	_test_stats_emit_only_when_observable_state_changes()
 	_test_active_sector_is_not_regenerated()
+	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
 	_test_invalid_visual_type_materializes_with_safe_fallback()
 
 
@@ -165,6 +166,37 @@ func _test_active_sector_is_not_regenerated() -> void:
 		generator.calls_by_sector,
 		calls_after_load,
 		"an active sector is not regenerated when the center remains unchanged"
+	)
+	controller.free()
+	view.free()
+
+
+func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> void:
+	var generator = CountingGenerator.new()
+	var view = View.new()
+	var controller = Controller.new()
+	var origin = PositionType.new(Coordinate.new(), Vector2.ZERO)
+	controller.configure(generator, view, origin)
+	controller.update_view(300.0, Vector2(1920.0, 1080.0))
+	controller.process_pending(500)
+	assert_equal(
+		view.active_sector_count(),
+		187,
+		"maximum zoom fills rectangular visible coverage"
+	)
+	var calls_at_maximum: Dictionary = generator.calls_by_sector.duplicate()
+	controller.update_view(300.0, Vector2(1920.0, 1080.0))
+	controller.process_pending(500)
+	assert_equal(
+		generator.calls_by_sector,
+		calls_at_maximum,
+		"unchanged view does not regenerate active sectors"
+	)
+	controller.update_view(50.0, Vector2(1920.0, 1080.0))
+	controller.process_pending(500)
+	assert_true(
+		view.active_sector_count() <= 63,
+		"zooming in unloads sectors outside hysteresis"
 	)
 	controller.free()
 	view.free()

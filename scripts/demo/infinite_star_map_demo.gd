@@ -33,6 +33,11 @@ func _init() -> void:
 	stream.configure(Generator.new(), sector_view, map_camera.logical_position)
 
 
+func _ready() -> void:
+	get_viewport().size_changed.connect(_refresh_stream_coverage)
+	_refresh_stream_coverage()
+
+
 func _add_environment() -> void:
 	var world := WorldEnvironment.new()
 	world.name = "WorldEnvironment"
@@ -64,8 +69,16 @@ func _update_stats(sectors: int, stars: int, center_key: String) -> void:
 
 
 func _on_zoom_changed(_new_size: float) -> void:
+	_refresh_stream_coverage()
 	_update_stats(
 		sector_view.active_sector_count(),
 		sector_view.star_count(),
 		map_camera.logical_position.sector.key()
 	)
+
+
+func _refresh_stream_coverage() -> void:
+	var viewport := get_viewport()
+	if viewport == null:
+		viewport = Engine.get_main_loop().root
+	stream.update_view(map_camera.size, viewport.get_visible_rect().size)

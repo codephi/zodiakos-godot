@@ -13,6 +13,8 @@ var center
 var pending := []
 var queued := {}
 var projection = ProjectionScript.new()
+var load_radii := Vector2i(2, 2)
+var unload_radii := Vector2i(3, 3)
 var _last_stats := []
 
 
@@ -24,13 +26,35 @@ func configure(source_generator, target_view, initial_position) -> void:
 
 func update_center(position) -> void:
 	center = position.sector.offset(0, 0)
+	_reconcile_stream()
+
+
+func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
+	if viewport_size.y <= 0.0:
+		return
+	var next_load := projection.load_radii(
+		orthographic_size,
+		viewport_size.x / viewport_size.y
+	)
+	if next_load == load_radii:
+		return
+	load_radii = next_load
+	unload_radii = projection.unload_radii(load_radii)
+	_reconcile_stream()
+
+
+func _reconcile_stream() -> void:
 	view.rebase(center)
 	pending.clear()
 	queued.clear()
-	for coordinate in projection.load_order(center, view.active_keys(), queued):
+	for coordinate in projection.load_order(center, view.active_keys(), queued, load_radii):
 		pending.append(coordinate)
 		queued[coordinate.key()] = true
-	for coordinate in projection.unload_coordinates(center, view.active_coordinates()):
+	for coordinate in projection.unload_coordinates(
+		center,
+		view.active_coordinates(),
+		unload_radii
+	):
 		view.remove_sector(coordinate)
 	_emit_stats()
 

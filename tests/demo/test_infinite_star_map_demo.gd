@@ -6,6 +6,7 @@ const Demo = preload("res://scenes/demo/infinite_star_map_demo.tscn")
 func run() -> void:
 	_test_composes_infinite_map_and_progressively_loads_initial_sectors()
 	_test_hud_reports_map_stats_and_zoom()
+	_test_maximum_zoom_refreshes_stream_coverage_and_hud()
 
 
 func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> void:
@@ -36,4 +37,23 @@ func _test_hud_reports_map_stats_and_zoom() -> void:
 	assert_true(stats.text.contains("Zoom: 50.0"), "HUD shows initial zoom")
 	camera.apply_zoom_steps(1)
 	assert_true(stats.text.contains("Zoom: 44.0"), "HUD refreshes after zoom")
+	demo.free()
+
+
+func _test_maximum_zoom_refreshes_stream_coverage_and_hud() -> void:
+	var demo = Demo.instantiate()
+	Engine.get_main_loop().root.add_child(demo)
+	var camera = demo.get_node("MapCamera")
+	var stream = demo.get_node("SectorStreamController")
+	camera.apply_zoom_steps(-200)
+	assert_equal(camera.size, 300.0, "demo reaches approved maximum zoom")
+	assert_equal(
+		stream.load_radii,
+		Vector2i(8, 5),
+		"demo forwards maximum 16:9 coverage"
+	)
+	assert_true(
+		demo.get_node("DebugHud/Stats").text.contains("Zoom: 300.0"),
+		"HUD reports maximum zoom"
+	)
 	demo.free()
