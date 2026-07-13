@@ -25,6 +25,7 @@ func run() -> void:
 	_test_factory_snapshots_mutable_configuration()
 	_test_counts_types_and_ids_respect_configuration()
 	_test_structure_names_and_orbits_are_consistent()
+	_test_minor_body_ordinals_are_local_to_type()
 	_test_full_system_id_distinguishes_same_coordinate_names()
 
 
@@ -211,18 +212,55 @@ func _test_structure_names_and_orbits_are_consistent() -> void:
 		assert_equal(bodies[moon.parent_id].kind, &"planet", "moon parent is a generated planet")
 		assert_true(String(moon.id).begins_with(String(system.id) + ":moon:"), "moon id suffix")
 		assert_true(moon.designation.begins_with(bodies[moon.parent_id].designation + "-"), "moon name")
+	var minor_counts_by_type := {}
 	for index in composition.minor_bodies.size():
 		var minor = composition.minor_bodies[index]
+		var local_type_index: int = minor_counts_by_type.get(minor.subtype, 0)
 		assert_equal(minor.id, StringName("%s:minor:%d" % [system.id, index]), "minor id suffix")
 		assert_equal(minor.parent_id, primary.id, "minor parent is primary star")
 		assert_equal(
 			minor.designation,
-			naming.minor_body_designation(system_name, minor.subtype, index),
-			"minor name"
+			naming.minor_body_designation(system_name, minor.subtype, local_type_index),
+			"minor name uses ordinal local to its type"
 		)
+		minor_counts_by_type[minor.subtype] = local_type_index + 1
 	_assert_orbits_match_parents(composition, bodies, primary.id)
 	_assert_planet_axes_increase(composition)
 	_assert_minor_types_cycle(composition.minor_bodies)
+
+
+func _test_minor_body_ordinals_are_local_to_type() -> void:
+	var factory = Factory.new()
+	var identity = _identity(101)
+	var naming = Naming.new()
+	var saw_first := {}
+	var saw_second := {}
+	for system_index in range(512):
+		var system = _system(
+			StringName("proc:1:2:-5:6:%d" % system_index),
+			Coordinate.new(-5, 6),
+			Vector2(float(system_index % 20), float(system_index / 20))
+		)
+		var composition = factory.create(system, identity)
+		var system_name := _system_name(system, identity, naming)
+		var local_counts := {}
+		for minor in composition.minor_bodies:
+			var local_index: int = local_counts.get(minor.subtype, 0)
+			assert_equal(
+				minor.designation,
+				naming.minor_body_designation(system_name, minor.subtype, local_index),
+				"minor ordinal increments independently for %s" % minor.subtype
+			)
+			if local_index == 0:
+				assert_true(minor.designation.ends_with("-001"), "first typed minor uses 001")
+				saw_first[minor.subtype] = true
+			elif local_index == 1:
+				assert_true(minor.designation.ends_with("-002"), "second typed minor uses 002")
+				saw_second[minor.subtype] = true
+			local_counts[minor.subtype] = local_index + 1
+	for minor_type in MINOR_TYPES:
+		assert_true(saw_first.has(minor_type), "sample covers first %s" % minor_type)
+		assert_true(saw_second.has(minor_type), "sample covers second %s" % minor_type)
 
 
 func _test_full_system_id_distinguishes_same_coordinate_names() -> void:
@@ -238,6 +276,17 @@ func _test_full_system_id_distinguishes_same_coordinate_names() -> void:
 
 func _identity(seed_value: int):
 	return Identity.new(seed_value, Settings.universe_generator_version, Metadata.new(1, 2, 3), Settings)
+
+
+func _system_name(system, identity, naming) -> String:
+	var global_position: Vector2 = (
+		Vector2(system.sector.x, system.sector.y) * Settings.universe_sector_size
+		+ system.local_position
+	)
+	return naming.system_designation(
+		global_position,
+		SeedMixer.mix_text(identity.value, String(system.id) + ":system-ordinal")
+	)
 
 
 func _system(system_id: StringName, sector: Coordinate, local_position: Vector2, z := 20.0):

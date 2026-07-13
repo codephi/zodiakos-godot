@@ -232,20 +232,27 @@ func _create_minor_bodies(
 		0,
 		MINOR_TYPE_COUNT - 1
 	)
+	var type_counts := {}
 	for index in minor_count:
 		var minor_id := StringName("%s:minor:%d" % [system.id, index])
 		var minor_type := _minor_type_at(first_type + index)
+		var local_type_index: int = type_counts.get(minor_type, 0)
 		minor_bodies.append(
 			Body.new(
 				minor_id,
 				&"minor_body",
-				_naming.minor_body_designation(system_designation, minor_type, index),
+				_naming.minor_body_designation(
+					system_designation,
+					minor_type,
+					local_type_index
+				),
 				"",
 				minor_type,
 				primary_id,
 				{}
 			)
 		)
+		type_counts[minor_type] = local_type_index + 1
 		orbits.append(
 			Orbit.new(
 				minor_id,
