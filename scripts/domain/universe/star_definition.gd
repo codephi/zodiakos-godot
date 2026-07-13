@@ -1,8 +1,8 @@
 class_name StarDefinition
 extends RefCounted
 
-const GeneratorConfig = preload("res://scripts/domain/universe/universe_generator_config.gd")
 const SectorCoordinateType = preload("res://scripts/domain/universe/sector_coordinate.gd")
+const DefaultSettings = preload("res://config/game_settings.tres")
 
 var id: StringName:
 	get:
@@ -27,7 +27,7 @@ var priority: int:
 		return _priority
 var generator_version: int:
 	get:
-		return GeneratorConfig.GENERATOR_VERSION
+		return _generator_version
 
 var _id: StringName
 var _sector: SectorCoordinateType
@@ -36,6 +36,7 @@ var _visual_type: StringName
 var _source: StringName
 var _owner_sector: SectorCoordinateType
 var _priority: int
+var _generator_version: int
 
 
 func _init(
@@ -45,7 +46,8 @@ func _init(
 	type: StringName,
 	star_source: StringName,
 	owner: SectorCoordinateType,
-	star_priority: int
+	star_priority: int,
+	version: int = DefaultSettings.universe_generator_version
 ) -> void:
 	_id = star_id
 	_sector = star_sector.offset(0, 0)
@@ -54,3 +56,4 @@ func _init(
 	_source = star_source
 	_owner_sector = owner.offset(0, 0)
 	_priority = star_priority
+	_generator_version = version

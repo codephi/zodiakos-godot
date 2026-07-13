@@ -4,7 +4,7 @@ extends RefCounted
 const Mixer = preload("res://scripts/domain/universe/seed_mixer.gd")
 const Star = preload("res://scripts/domain/universe/star_definition.gd")
 const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
-const Config = preload("res://scripts/domain/universe/universe_generator_config.gd")
+const DefaultSettings = preload("res://config/game_settings.tres")
 
 
 class Candidate:
@@ -17,10 +17,12 @@ class Candidate:
 
 
 var global_seed: int
+var settings
 
 
-func _init(seed := Config.GLOBAL_SEED) -> void:
-	global_seed = seed
+func _init(seed = null, configuration = DefaultSettings) -> void:
+	settings = configuration
+	global_seed = settings.universe_global_seed if seed == null else seed
 
 
 func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
@@ -39,12 +41,17 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 				candidate.visual_type,
 				candidate.source,
 				candidate.owner,
-				candidate.priority
+				candidate.priority,
+				settings.universe_generator_version
 			)
 		)
-		if stars.size() == Config.MAX_STARS_PER_SECTOR:
+		if stars.size() == settings.universe_max_stars_per_sector:
 			break
-	return Sector.new(coordinate.offset(0, 0), stars)
+	return Sector.new(
+		coordinate.offset(0, 0),
+		stars,
+		settings.universe_generator_version
+	)
 
 
 func _resolve_candidates(candidates: Array) -> Array:
@@ -64,7 +71,9 @@ func _generate_nearby_candidates(target) -> Array:
 	for owner_y in range(-1, 2):
 		for owner_x in range(-1, 2):
 			var owner = target.offset(owner_x, owner_y)
-			var owner_origin := Vector2(owner_x, owner_y) * Config.SECTOR_SIZE
+			var owner_origin: Vector2 = (
+				Vector2(owner_x, owner_y) * float(settings.universe_sector_size)
+			)
 			_append_clusters(result, owner, owner_origin)
 			_append_isolated(result, owner, owner_origin)
 	return result.filter(_candidate_can_affect_target)
@@ -72,24 +81,24 @@ func _generate_nearby_candidates(target) -> Array:
 
 func _append_clusters(result: Array, owner, owner_origin: Vector2) -> void:
 	var cluster_count := _rng(owner, "cluster_count").randi_range(
-		Config.MIN_CLUSTERS,
-		Config.MAX_CLUSTERS
+		settings.universe_min_clusters,
+		settings.universe_max_clusters
 	)
 	for cluster_index in cluster_count:
 		var parameters := _indexed_rng(owner, "cluster_parameters", cluster_index)
 		var center := owner_origin + Vector2(
-			parameters.randf_range(0.0, Config.SECTOR_SIZE),
-			parameters.randf_range(0.0, Config.SECTOR_SIZE)
+			parameters.randf_range(0.0, settings.universe_sector_size),
+			parameters.randf_range(0.0, settings.universe_sector_size)
 		)
 		var radius := parameters.randf_range(
-			Config.MIN_CLUSTER_RADIUS,
-			Config.MAX_CLUSTER_RADIUS
+			settings.universe_min_cluster_radius,
+			settings.universe_max_cluster_radius
 		)
 		var axis_ratio := parameters.randf_range(0.65, 1.0)
 		var ellipse_rotation := parameters.randf_range(0.0, TAU)
 		var star_count := parameters.randi_range(
-			Config.MIN_CLUSTER_STARS,
-			Config.MAX_CLUSTER_STARS
+			settings.universe_min_cluster_stars,
+			settings.universe_max_cluster_stars
 		)
 		for star_index in star_count:
 			var star_rng := _indexed_rng(
@@ -112,12 +121,15 @@ func _append_clusters(result: Array, owner, owner_origin: Vector2) -> void:
 
 
 func _append_isolated(result: Array, owner, owner_origin: Vector2) -> void:
-	var count := _rng(owner, "isolated_count").randi_range(0, Config.MAX_ISOLATED_STARS)
+	var count := _rng(owner, "isolated_count").randi_range(
+		0,
+		settings.universe_max_isolated_stars
+	)
 	for star_index in count:
 		var star_rng := _indexed_rng(owner, "isolated_star", star_index)
 		var point := owner_origin + Vector2(
-			star_rng.randf_range(0.0, Config.SECTOR_SIZE),
-			star_rng.randf_range(0.0, Config.SECTOR_SIZE)
+			star_rng.randf_range(0.0, settings.universe_sector_size),
+			star_rng.randf_range(0.0, settings.universe_sector_size)
 		)
 		_append_candidate(result, owner, point, &"isolated", -1, star_index)
 
@@ -149,16 +161,16 @@ func _append_candidate(
 func _visual_type(owner, identity: String) -> StringName:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Mixer.mix(global_seed, owner, "type:" + identity)
-	var roll := rng.randi_range(0, 99)
-	if roll < 35:
-		return &"yellow"
-	if roll < 60:
-		return &"red"
-	if roll < 80:
-		return &"white"
-	if roll < 95:
-		return &"orange"
-	return &"blue"
+	var total_weight: int = 0
+	for weight in settings.universe_visual_type_weights:
+		total_weight += weight
+	var roll := rng.randi_range(0, total_weight - 1)
+	var cumulative_weight: int = 0
+	for index in settings.universe_visual_types.size():
+		cumulative_weight += settings.universe_visual_type_weights[index]
+		if roll < cumulative_weight:
+			return settings.universe_visual_types[index]
+	return settings.universe_visual_types.back()
 
 
 func _rng(owner, tag: String) -> RandomNumberGenerator:
@@ -179,7 +191,11 @@ func _indexed_rng(
 
 
 func _is_local_winner(candidate, candidates: Array) -> bool:
-	var minimum_squared := Config.MINIMUM_DISTANCE * Config.MINIMUM_DISTANCE
+	var minimum_distance: float = settings.universe_minimum_star_distance
+	var minimum_squared: float = (
+		minimum_distance
+		* minimum_distance
+	)
 	for other in candidates:
 		if other == candidate:
 			continue
@@ -198,10 +214,14 @@ func _candidate_precedes(left, right) -> bool:
 
 func _candidate_can_affect_target(candidate) -> bool:
 	return (
-		candidate.position.x >= -Config.MINIMUM_DISTANCE
-		and candidate.position.y >= -Config.MINIMUM_DISTANCE
-		and candidate.position.x < Config.SECTOR_SIZE + Config.MINIMUM_DISTANCE
-		and candidate.position.y < Config.SECTOR_SIZE + Config.MINIMUM_DISTANCE
+		candidate.position.x >= -settings.universe_minimum_star_distance
+		and candidate.position.y >= -settings.universe_minimum_star_distance
+		and candidate.position.x < (
+			settings.universe_sector_size + settings.universe_minimum_star_distance
+		)
+		and candidate.position.y < (
+			settings.universe_sector_size + settings.universe_minimum_star_distance
+		)
 	)
 
 
@@ -209,8 +229,8 @@ func _inside_target(position: Vector2) -> bool:
 	return (
 		position.x >= 0.0
 		and position.y >= 0.0
-		and position.x < Config.SECTOR_SIZE
-		and position.y < Config.SECTOR_SIZE
+		and position.x < settings.universe_sector_size
+		and position.y < settings.universe_sector_size
 	)
 
 

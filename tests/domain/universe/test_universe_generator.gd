@@ -2,7 +2,7 @@ extends "res://tests/test_case.gd"
 
 const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
 const Generator = preload("res://scripts/domain/universe/universe_generator.gd")
-const Config = preload("res://scripts/domain/universe/universe_generator_config.gd")
+const Settings = preload("res://config/game_settings.tres")
 
 
 func run() -> void:
@@ -21,7 +21,7 @@ func run() -> void:
 	)
 	assert_true(
 		_signature(first) != _signature(
-			Generator.new(Config.GLOBAL_SEED + 1).generate_sector(coordinate)
+			Generator.new(Settings.universe_global_seed + 1, Settings).generate_sector(coordinate)
 		),
 		"seed changes stars"
 	)
@@ -50,11 +50,11 @@ func _assert_region_rules(generator, center) -> void:
 	for offset_y in range(-1, 2):
 		for offset_x in range(-1, 2):
 			var sector = generator.generate_sector(center.offset(offset_x, offset_y))
-			assert_true(sector.stars.size() <= Config.MAX_STARS_PER_SECTOR, "sector cap")
+			assert_true(sector.stars.size() <= Settings.universe_max_stars_per_sector, "sector cap")
 			for star in sector.stars:
 				assert_true(not ids.has(star.id), "star id is unique")
 				ids[star.id] = true
-				assert_true(Config.VISUAL_TYPES.has(star.visual_type), "known visual type")
+				assert_true(Settings.universe_visual_types.has(star.visual_type), "known visual type")
 				all_stars.append(star)
 	for index in all_stars.size():
 		for other_index in range(index + 1, all_stars.size()):
@@ -65,12 +65,12 @@ func _assert_region_rules(generator, center) -> void:
 				left.sector.y - right.sector.y
 			)
 			var delta = (
-				delta_sector * Config.SECTOR_SIZE
+				delta_sector * Settings.universe_sector_size
 				+ left.local_position
 				- right.local_position
 			)
 			assert_true(
-				delta.length() >= Config.MINIMUM_DISTANCE - 0.001,
+				delta.length() >= Settings.universe_minimum_star_distance - 0.001,
 				"global minimum distance"
 			)
 
@@ -94,7 +94,7 @@ func _assert_exact_minimum_distance_is_valid(generator) -> void:
 	first.priority = 2
 	var second = Generator.Candidate.new()
 	second.id = &"second"
-	second.position = Vector2(Config.MINIMUM_DISTANCE, 0.0)
+	second.position = Vector2(Settings.universe_minimum_star_distance, 0.0)
 	second.priority = 1
 	var candidates := [first, second]
 	assert_true(generator._is_local_winner(first, candidates), "exact minimum distance is valid")
@@ -166,7 +166,7 @@ func _assert_visual_type_distribution(generator) -> void:
 	for index in 2000:
 		var visual_type = generator._visual_type(owner, "distribution:%d" % index)
 		counts[visual_type] = counts.get(visual_type, 0) + 1
-	for visual_type in Config.VISUAL_TYPES:
+	for visual_type in Settings.universe_visual_types:
 		assert_true(counts.get(visual_type, 0) > 0, "%s appears in type distribution" % visual_type)
 	assert_true(
 		counts[&"yellow"] > counts[&"blue"],
