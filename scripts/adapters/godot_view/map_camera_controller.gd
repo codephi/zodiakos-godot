@@ -6,23 +6,26 @@ signal zoom_changed(new_size: float)
 
 const PositionType = preload("res://scripts/domain/universe/universe_position.gd")
 const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
-const MINIMUM_SIZE := 20.0
-const MAXIMUM_SIZE := 300.0
-const ZOOM_FACTOR := 0.88
-const CAMERA_HEIGHT := 40.0
-const DRAG_THRESHOLD_PIXELS := 4.0
+const DefaultSettings = preload("res://config/game_settings.tres")
 
-var logical_position = PositionType.new(Coordinate.new(), Vector2.ZERO)
+var settings
+var logical_position
 var dragging := false
 var drag_active := false
 var drag_accumulator := Vector2.ZERO
 
 
-func _init() -> void:
+func _init(configuration = DefaultSettings) -> void:
+	settings = configuration
+	logical_position = PositionType.new(
+		Coordinate.new(),
+		Vector2.ZERO,
+		settings.universe_sector_size
+	)
 	projection = Camera3D.PROJECTION_ORTHOGONAL
-	size = 50.0
+	size = settings.camera_initial_zoom
 	rotation_degrees.x = -90.0
-	position = Vector3(0.0, CAMERA_HEIGHT, 0.0)
+	position = Vector3(0.0, settings.camera_height, 0.0)
 	current = true
 
 
@@ -56,7 +59,7 @@ func end_drag() -> void:
 
 func accumulate_drag_pixels(delta: Vector2, viewport_height: float) -> void:
 	drag_accumulator += delta
-	if not drag_active and drag_accumulator.length() < DRAG_THRESHOLD_PIXELS:
+	if not drag_active and drag_accumulator.length() < settings.camera_drag_threshold_pixels:
 		return
 	drag_active = true
 	apply_drag_pixels(drag_accumulator, viewport_height)
@@ -79,10 +82,10 @@ func apply_zoom_at(steps: int, cursor_position: Vector2, viewport_size: Vector2)
 	var previous_size := size
 	var next_size := previous_size
 	if steps > 0:
-		next_size *= pow(ZOOM_FACTOR, steps)
+		next_size *= pow(settings.camera_zoom_factor, steps)
 	elif steps < 0:
-		next_size /= pow(ZOOM_FACTOR, -steps)
-	next_size = clampf(next_size, MINIMUM_SIZE, MAXIMUM_SIZE)
+		next_size /= pow(settings.camera_zoom_factor, -steps)
+	next_size = clampf(next_size, settings.camera_min_zoom, settings.camera_max_zoom)
 	if is_equal_approx(next_size, previous_size):
 		return
 
@@ -98,4 +101,8 @@ func apply_zoom_at(steps: int, cursor_position: Vector2, viewport_size: Vector2)
 
 
 func sync_visual_position() -> void:
-	position = Vector3(logical_position.local.x, CAMERA_HEIGHT, logical_position.local.y)
+	position = Vector3(
+		logical_position.local.x,
+		settings.camera_height,
+		logical_position.local.y
+	)

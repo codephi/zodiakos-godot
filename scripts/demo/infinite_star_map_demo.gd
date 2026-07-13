@@ -4,7 +4,7 @@ const CameraType = preload("res://scripts/adapters/godot_view/map_camera_control
 const ViewType = preload("res://scripts/adapters/godot_view/star_field_view.gd")
 const StreamType = preload("res://scripts/adapters/godot_view/sector_stream_controller.gd")
 const Generator = preload("res://scripts/domain/universe/universe_generator.gd")
-const Config = preload("res://scripts/domain/universe/universe_generator_config.gd")
+const Settings = preload("res://config/game_settings.tres")
 
 var stats_label: Label
 var map_camera
@@ -13,7 +13,7 @@ var stream
 
 
 func _init() -> void:
-	map_camera = CameraType.new()
+	map_camera = CameraType.new(Settings)
 	map_camera.name = "MapCamera"
 	add_child(map_camera)
 
@@ -21,7 +21,7 @@ func _init() -> void:
 	sector_view.name = "SectorRoot"
 	add_child(sector_view)
 
-	stream = StreamType.new()
+	stream = StreamType.new(Settings)
 	stream.name = "SectorStreamController"
 	add_child(stream)
 
@@ -30,7 +30,7 @@ func _init() -> void:
 	map_camera.logical_position_changed.connect(stream.update_center)
 	map_camera.zoom_changed.connect(_on_zoom_changed)
 	stream.stats_changed.connect(_update_stats)
-	stream.configure(Generator.new(), sector_view, map_camera.logical_position)
+	stream.configure(Generator.new(null, Settings), sector_view, map_camera.logical_position)
 
 
 func _ready() -> void:
@@ -68,7 +68,7 @@ func _add_hud() -> void:
 func _update_stats(sectors: int, stars: int, center_key: String) -> void:
 	stats_label.text = (
 		"Seed: 0x%X\nSector: %s\nActive: %d\nStars: %d\nZoom: %.1f"
-		% [Config.GLOBAL_SEED, center_key, sectors, stars, map_camera.size]
+		% [Settings.universe_global_seed, center_key, sectors, stars, map_camera.size]
 	)
 
 

@@ -2,6 +2,7 @@ extends "res://tests/test_case.gd"
 
 const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
 const ProjectionScript = preload("res://scripts/application/projections/visible_sector_projection.gd")
+const Settings = preload("res://config/game_settings.tres")
 
 
 func run() -> void:
@@ -82,6 +83,21 @@ func run() -> void:
 		projection.unload_coordinates(center, [beyond_rectangular], Vector2i(9, 6)),
 		[beyond_rectangular],
 		"coordinate beyond either rectangular axis unloads"
+	)
+
+	var custom = Settings.duplicate(true)
+	custom.universe_sector_size = 100.0
+	custom.stream_load_margin = 2
+	custom.stream_unload_margin = 4
+	custom.stream_min_aspect_ratio = 0.5
+	custom.stream_max_aspect_ratio = 2.0
+	var configured_projection = ProjectionScript.new(custom)
+	var configured_load = configured_projection.load_radii(100.0, 10.0)
+	assert_equal(configured_load, Vector2i(3, 3), "coverage uses injected settings")
+	assert_equal(
+		configured_projection.unload_radii(configured_load),
+		Vector2i(7, 7),
+		"hysteresis uses injected settings"
 	)
 
 

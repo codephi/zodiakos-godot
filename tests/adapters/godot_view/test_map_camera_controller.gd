@@ -1,6 +1,7 @@
 extends "res://tests/test_case.gd"
 
 const CameraController = preload("res://scripts/adapters/godot_view/map_camera_controller.gd")
+const Settings = preload("res://config/game_settings.tres")
 
 
 func run() -> void:
@@ -9,6 +10,7 @@ func run() -> void:
 	_test_zoom_anchors_to_current_cursor()
 	_test_zoom_uses_each_scroll_events_current_cursor()
 	_test_zoom_limits_and_invalid_viewport_do_not_move_camera()
+	_test_camera_uses_injected_settings()
 
 
 func _test_drag_threshold_and_floating_position() -> void:
@@ -42,13 +44,17 @@ func _test_zoom_clamps_and_signal() -> void:
 	var camera = CameraController.new()
 	var changed_sizes: Array[float] = []
 	camera.zoom_changed.connect(func(new_size: float): changed_sizes.append(new_size))
-	assert_equal(camera.MAXIMUM_SIZE, 300.0, "map can zoom out to the approved distance")
+	assert_equal(Settings.camera_max_zoom, 300.0, "map can zoom out to the approved distance")
 
 	camera.apply_zoom_steps(100)
-	assert_equal(camera.size, camera.MINIMUM_SIZE, "zoom in clamps exactly to the minimum")
+	assert_equal(camera.size, Settings.camera_min_zoom, "zoom in clamps exactly to the minimum")
 	camera.apply_zoom_steps(-200)
-	assert_equal(camera.size, camera.MAXIMUM_SIZE, "zoom out clamps exactly to the maximum")
-	assert_equal(changed_sizes, [camera.MINIMUM_SIZE, camera.MAXIMUM_SIZE], "each zoom command emits the clamped size")
+	assert_equal(camera.size, Settings.camera_max_zoom, "zoom out clamps exactly to the maximum")
+	assert_equal(
+		changed_sizes,
+		[Settings.camera_min_zoom, Settings.camera_max_zoom],
+		"each zoom command emits the clamped size"
+	)
 	camera.free()
 
 
@@ -91,4 +97,25 @@ func _test_zoom_limits_and_invalid_viewport_do_not_move_camera() -> void:
 	assert_equal(camera.logical_position.local, Vector2.ZERO, "clamped zoom does not move the camera")
 	assert_equal(positions.size(), 0, "clamped zoom emits no position change")
 	assert_equal(sizes.size(), 0, "clamped zoom emits no size change")
+	camera.free()
+
+
+func _test_camera_uses_injected_settings() -> void:
+	var custom = Settings.duplicate(true)
+	custom.camera_min_zoom = 30.0
+	custom.camera_max_zoom = 100.0
+	custom.camera_initial_zoom = 60.0
+	custom.camera_zoom_factor = 0.5
+	custom.camera_height = 25.0
+	custom.camera_drag_threshold_pixels = 2.0
+	custom.universe_sector_size = 10.0
+	var camera = CameraController.new(custom)
+	assert_equal(camera.size, 60.0, "initial zoom comes from injected settings")
+	assert_equal(camera.position.y, 25.0, "camera height comes from injected settings")
+	camera.apply_zoom_steps(1)
+	assert_equal(camera.size, 30.0, "zoom factor and minimum come from injected settings")
+	camera.begin_drag()
+	camera.accumulate_drag_pixels(Vector2(2.0, 0.0), 60.0)
+	assert_equal(camera.logical_position.sector.key(), "-1:0", "drag uses configured threshold")
+	assert_equal(camera.logical_position.local, Vector2(9.0, 0.0), "camera position uses configured sector size")
 	camera.free()

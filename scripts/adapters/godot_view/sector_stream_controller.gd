@@ -6,16 +6,25 @@ signal stats_changed(active_sectors: int, visible_stars: int, center_key: String
 const ProjectionScript = preload(
 	"res://scripts/application/projections/visible_sector_projection.gd"
 )
+const DefaultSettings = preload("res://config/game_settings.tres")
 
+var settings
 var generator
 var view
 var center
 var pending := []
 var queued := {}
-var projection = ProjectionScript.new()
-var load_radii := Vector2i(2, 2)
-var unload_radii := Vector2i(3, 3)
+var projection
+var load_radii: Vector2i
+var unload_radii: Vector2i
 var _last_stats := []
+
+
+func _init(configuration = DefaultSettings) -> void:
+	settings = configuration
+	projection = ProjectionScript.new(settings)
+	load_radii = settings.stream_initial_load_radii
+	unload_radii = projection.unload_radii(load_radii)
 
 
 func configure(source_generator, target_view, initial_position) -> void:
@@ -35,7 +44,7 @@ func update_center(position) -> void:
 func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
-	var next_load := projection.load_radii(
+	var next_load: Vector2i = projection.load_radii(
 		orthographic_size,
 		viewport_size.x / viewport_size.y
 	)
@@ -65,8 +74,9 @@ func _process(_delta: float) -> void:
 	process_pending()
 
 
-func process_pending(limit := 2) -> void:
-	var batch_size := mini(maxi(limit, 0), pending.size())
+func process_pending(limit = null) -> void:
+	var requested_limit: int = settings.stream_sectors_per_frame if limit == null else limit
+	var batch_size := mini(maxi(requested_limit, 0), pending.size())
 	for _index in batch_size:
 		var coordinate = pending.pop_front()
 		queued.erase(coordinate.key())

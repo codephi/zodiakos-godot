@@ -8,6 +8,7 @@ const Controller = preload("res://scripts/adapters/godot_view/sector_stream_cont
 const StarVisualType = preload("res://scripts/visuals/star_visual.gd")
 const StarDefinitionType = preload("res://scripts/domain/universe/star_definition.gd")
 const UniverseSectorType = preload("res://scripts/domain/universe/universe_sector.gd")
+const Settings = preload("res://config/game_settings.tres")
 
 
 class CountingGenerator extends RefCounted:
@@ -73,6 +74,7 @@ func run() -> void:
 	_test_non_positive_viewport_width_is_ignored()
 	_test_extreme_positive_viewport_is_safely_bounded()
 	_test_invalid_visual_type_materializes_with_safe_fallback()
+	_test_stream_uses_injected_settings()
 
 
 func _test_bounded_streaming_and_deterministic_rematerialization() -> void:
@@ -395,4 +397,24 @@ func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
 		== view.get_node("Sector_0_0/yellow_visual/Body").material_override,
 		"invalid visual type reuses the canonical fallback material"
 	)
+	view.free()
+
+
+func _test_stream_uses_injected_settings() -> void:
+	var custom = Settings.duplicate(true)
+	custom.stream_initial_load_radii = Vector2i(1, 1)
+	custom.stream_unload_margin = 2
+	custom.stream_sectors_per_frame = 1
+	var view = View.new()
+	var controller = Controller.new(custom)
+	controller.configure(
+		Generator.new(null, custom),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO, custom.universe_sector_size)
+	)
+	assert_equal(controller.pending.size(), 9, "initial coverage uses injected settings")
+	controller.process_pending()
+	assert_equal(view.active_sector_count(), 1, "default frame budget uses injected settings")
+	assert_equal(controller.unload_radii, Vector2i(3, 3), "unload radius uses configured margin")
+	controller.free()
 	view.free()

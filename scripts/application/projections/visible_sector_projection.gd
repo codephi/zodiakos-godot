@@ -1,29 +1,31 @@
 class_name VisibleSectorProjection
 extends RefCounted
 
-const Scale = preload("res://scripts/domain/universe/universe_scale.gd")
-const LOAD_MARGIN := 1
-const UNLOAD_MARGIN := 1
-const MINIMUM_ASPECT_RATIO := 0.25
-const MAXIMUM_ASPECT_RATIO := 4.0
+const DefaultSettings = preload("res://config/game_settings.tres")
+
+var settings
+
+
+func _init(configuration = DefaultSettings) -> void:
+	settings = configuration
 
 
 func load_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
 	var half_height := maxf(orthographic_size, 0.0) * 0.5
 	var safe_aspect_ratio := clampf(
 		aspect_ratio,
-		MINIMUM_ASPECT_RATIO,
-		MAXIMUM_ASPECT_RATIO
+		settings.stream_min_aspect_ratio,
+		settings.stream_max_aspect_ratio
 	)
 	var half_width := half_height * safe_aspect_ratio
 	return Vector2i(
-		ceili(half_width / Scale.SECTOR_SIZE) + LOAD_MARGIN,
-		ceili(half_height / Scale.SECTOR_SIZE) + LOAD_MARGIN
+		ceili(half_width / settings.universe_sector_size) + settings.stream_load_margin,
+		ceili(half_height / settings.universe_sector_size) + settings.stream_load_margin
 	)
 
 
 func unload_radii(load: Vector2i) -> Vector2i:
-	return load + Vector2i(UNLOAD_MARGIN, UNLOAD_MARGIN)
+	return load + Vector2i(settings.stream_unload_margin, settings.stream_unload_margin)
 
 
 func load_order(
