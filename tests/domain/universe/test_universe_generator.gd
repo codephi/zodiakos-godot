@@ -69,6 +69,8 @@ func _test_every_output_setting_versions_the_identity() -> void:
 	var baseline = Identity.new(101, 7, Metadata.new(1, 2, 3), Settings).value
 	var changed_visual_types: Array[StringName] = [&"red", &"yellow"]
 	var changed_visual_weights: Array[int] = [34, 25, 20, 15, 6]
+	var changed_planet_types: Array[StringName] = [&"gas", &"rocky", &"ice", &"volcanic"]
+	var changed_planet_weights: Array[int] = [44, 21, 25, 10]
 	var changed_values := {
 		&"galaxy_disk_radius_pc": Settings.galaxy_disk_radius_pc + 1.0,
 		&"galaxy_halo_radius_pc": Settings.galaxy_halo_radius_pc + 1.0,
@@ -88,6 +90,13 @@ func _test_every_output_setting_versions_the_identity() -> void:
 		&"universe_minimum_system_distance": Settings.universe_minimum_system_distance + 0.1,
 		&"universe_visual_types": changed_visual_types,
 		&"universe_visual_type_weights": changed_visual_weights,
+		&"system_min_stars": Settings.system_min_stars + 1,
+		&"system_max_stars": Settings.system_max_stars + 1,
+		&"system_max_planets": Settings.system_max_planets + 1,
+		&"system_max_moons_per_planet": Settings.system_max_moons_per_planet + 1,
+		&"system_max_minor_bodies": Settings.system_max_minor_bodies + 1,
+		&"system_planet_types": changed_planet_types,
+		&"system_planet_type_weights": changed_planet_weights,
 	}
 	for field: StringName in changed_values:
 		var changed = Settings.duplicate(true)
@@ -330,6 +339,13 @@ func _test_generator_snapshots_mutable_configuration() -> void:
 	mutable.galaxy_max_candidate_systems_per_sector = 1
 	mutable.universe_visual_types[0] = &"blue"
 	mutable.universe_visual_type_weights[0] = 1
+	mutable.system_min_stars = 2
+	mutable.system_max_stars = 4
+	mutable.system_max_planets = 1
+	mutable.system_max_moons_per_planet = 0
+	mutable.system_max_minor_bodies = 0
+	mutable.system_planet_types[0] = &"gas"
+	mutable.system_planet_type_weights[0] = 1
 	var changed_types: Array[StringName] = [&"blue"]
 	var changed_weights: Array[int] = [1]
 	mutable.universe_visual_types = changed_types

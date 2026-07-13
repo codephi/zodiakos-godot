@@ -33,6 +33,17 @@ func run() -> void:
 		"candidate cap"
 	)
 	assert_equal(Settings.universe_minimum_system_distance, 1.5, "system spacing")
+	assert_equal(Settings.system_min_stars, 1, "minimum stars")
+	assert_equal(Settings.system_max_stars, 3, "maximum stars")
+	assert_equal(Settings.system_max_planets, 12, "planet cap")
+	assert_equal(Settings.system_max_moons_per_planet, 4, "moon cap")
+	assert_equal(Settings.system_max_minor_bodies, 8, "minor body cap")
+	assert_equal(
+		Settings.system_planet_types,
+		[&"rocky", &"gas", &"ice", &"volcanic"],
+		"planet types"
+	)
+	assert_equal(Settings.system_planet_type_weights, [45, 20, 25, 10], "planet weights")
 	assert_equal(
 		Settings.universe_visual_type_weights,
 		[35, 25, 20, 15, 5],
@@ -125,6 +136,57 @@ func run() -> void:
 		1.01,
 		"galaxy_halo_weight must be between 0 and 1"
 	)
+	_assert_validation_error(
+		"system_min_stars",
+		0,
+		"system star count must satisfy 1 <= minimum <= maximum"
+	)
+	_assert_validation_error(
+		"system_max_stars",
+		0,
+		"system star count must satisfy 1 <= minimum <= maximum"
+	)
+	_assert_validation_error(
+		"system_max_planets",
+		-1,
+		"system_max_planets must be nonnegative"
+	)
+	_assert_validation_error(
+		"system_max_moons_per_planet",
+		-1,
+		"system_max_moons_per_planet must be nonnegative"
+	)
+	_assert_validation_error(
+		"system_max_minor_bodies",
+		-1,
+		"system_max_minor_bodies must be nonnegative"
+	)
+
+	_assert_planet_type_validation(
+		[],
+		[],
+		"system_planet_types must not be empty"
+	)
+	_assert_planet_type_validation(
+		[&"rocky", &"gas"],
+		[1],
+		"system planet types and weights must have matching sizes"
+	)
+	_assert_planet_type_validation(
+		[&"rocky", &"rocky"],
+		[1, 1],
+		"system_planet_types must contain unique values"
+	)
+	_assert_planet_type_validation(
+		[&"rocky", &"ocean"],
+		[1, 1],
+		"system_planet_types contains unsupported value: ocean"
+	)
+	_assert_planet_type_validation(
+		[&"rocky"],
+		[0],
+		"system_planet_type_weights must contain positive values"
+	)
 
 	var invalid_radii = Settings.duplicate(true)
 	invalid_radii.galaxy_disk_radius_pc = invalid_radii.galaxy_halo_radius_pc
@@ -146,4 +208,18 @@ func _assert_validation_error(
 	assert_true(
 		invalid.validation_errors().has(expected_error),
 		"%s rejects %s" % [field_name, value]
+	)
+
+
+func _assert_planet_type_validation(
+	types: Array[StringName],
+	weights: Array[int],
+	expected_error: String
+) -> void:
+	var invalid = Settings.duplicate(true)
+	invalid.system_planet_types = types
+	invalid.system_planet_type_weights = weights
+	assert_true(
+		invalid.validation_errors().has(expected_error),
+		"planet composition rejects invalid type configuration"
 	)

@@ -64,6 +64,19 @@ func _canonical_value(
 		),
 		_pair("universe_visual_types", _string_names(settings.universe_visual_types)),
 		_pair("universe_visual_type_weights", _integers(settings.universe_visual_type_weights)),
+		_pair("system_min_stars", str(settings.system_min_stars)),
+		_pair("system_max_stars", str(settings.system_max_stars)),
+		_pair("system_max_planets", str(settings.system_max_planets)),
+		_pair(
+			"system_max_moons_per_planet",
+			str(settings.system_max_moons_per_planet)
+		),
+		_pair("system_max_minor_bodies", str(settings.system_max_minor_bodies)),
+		_pair("system_planet_types", _string_names(settings.system_planet_types)),
+		_pair(
+			"system_planet_type_weights",
+			_integers(settings.system_planet_type_weights)
+		),
 	]
 	var encoded := PackedStringArray()
 	for field in fields:

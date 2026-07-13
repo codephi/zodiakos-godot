@@ -39,6 +39,15 @@ extends Resource
 @export var galaxy_halo_weight: float
 @export var galaxy_max_candidate_systems_per_sector: int
 
+@export_category("Procedural System Composition")
+@export var system_min_stars: int
+@export var system_max_stars: int
+@export var system_max_planets: int
+@export var system_max_moons_per_planet: int
+@export var system_max_minor_bodies: int
+@export var system_planet_types: Array[StringName]
+@export var system_planet_type_weights: Array[int]
+
 @export_category("Visual Palette")
 @export var neutral_owner_color: Color
 @export var ship_styles: Dictionary
@@ -95,6 +104,7 @@ func validation_errors() -> PackedStringArray:
 	_validate_streaming(errors)
 	_validate_universe(errors)
 	_validate_galaxy(errors)
+	_validate_system_composition(errors)
 	_validate_visuals(errors)
 	_validate_demo(errors)
 	return errors
@@ -161,6 +171,36 @@ func _validate_galaxy(errors: PackedStringArray) -> void:
 		errors.append("galaxy_halo_weight must be between 0 and 1")
 	if galaxy_disk_radius_pc >= galaxy_halo_radius_pc:
 		errors.append("galaxy radii must satisfy disk radius < halo radius")
+
+
+func _validate_system_composition(errors: PackedStringArray) -> void:
+	if system_min_stars < 1 or system_min_stars > system_max_stars:
+		errors.append("system star count must satisfy 1 <= minimum <= maximum")
+	_require_nonnegative(errors, "system_max_planets", system_max_planets)
+	_require_nonnegative(
+		errors,
+		"system_max_moons_per_planet",
+		system_max_moons_per_planet
+	)
+	_require_nonnegative(errors, "system_max_minor_bodies", system_max_minor_bodies)
+	if system_planet_types.is_empty():
+		errors.append("system_planet_types must not be empty")
+	if system_planet_types.size() != system_planet_type_weights.size():
+		errors.append("system planet types and weights must have matching sizes")
+	var seen_types := {}
+	var supported_types: Array[StringName] = [&"rocky", &"gas", &"ice", &"volcanic"]
+	for planet_type in system_planet_types:
+		if seen_types.has(planet_type):
+			errors.append("system_planet_types must contain unique values")
+		else:
+			seen_types[planet_type] = true
+		if not supported_types.has(planet_type):
+			errors.append(
+				"system_planet_types contains unsupported value: %s" % planet_type
+			)
+	for weight in system_planet_type_weights:
+		if weight <= 0:
+			errors.append("system_planet_type_weights must contain positive values")
 
 
 func _validate_visuals(errors: PackedStringArray) -> void:
