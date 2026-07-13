@@ -3,7 +3,52 @@ extends "res://scripts/application/ports/scientific_catalog_repository.gd"
 
 const Metadata = preload("res://scripts/domain/catalog/catalog_metadata.gd")
 const Anchor = preload("res://scripts/domain/catalog/system_anchor.gd")
+const Body = preload("res://scripts/domain/universe/system_body_definition.gd")
+const Orbit = preload("res://scripts/domain/universe/orbit_definition.gd")
+const Composition = preload(
+	"res://scripts/domain/universe/stellar_system_composition.gd"
+)
 const DEFAULT_DATABASE_PATH := "res://data/catalog/zodiakos_catalog.sqlite"
+const SYSTEM_EXISTS_SQL := "SELECT object_id FROM stellar_systems WHERE object_id=?"
+const STARS_IN_SYSTEM_SQL := (
+	"SELECT o.id,o.canonical_designation,o.proper_name,o.discovery_year,o.notes,"
+	+ "s.component,s.spectral_type,s.mass_solar,s.radius_solar,"
+	+ "s.temperature_k,s.luminosity_solar "
+	+ "FROM stars s JOIN catalog_objects o ON o.id=s.object_id "
+	+ "WHERE s.system_id=? ORDER BY o.id"
+)
+const PLANETS_IN_SYSTEM_SQL := (
+	"SELECT o.id,o.canonical_designation,o.proper_name,o.discovery_year,o.notes,"
+	+ "p.planet_letter,p.planet_class,p.mass_earth,p.radius_earth,"
+	+ "p.equilibrium_temperature_k "
+	+ "FROM planets p JOIN catalog_objects o ON o.id=p.object_id "
+	+ "WHERE p.system_id=? ORDER BY o.id"
+)
+const MOONS_IN_SYSTEM_SQL := (
+	"SELECT o.id,o.canonical_designation,o.proper_name,o.discovery_year,o.notes,"
+	+ "m.planet_id,m.satellite_designation,m.mass_kg,m.radius_km "
+	+ "FROM moons m JOIN catalog_objects o ON o.id=m.object_id "
+	+ "WHERE m.system_id=? ORDER BY o.id"
+)
+const MINOR_BODIES_IN_SYSTEM_SQL := (
+	"SELECT o.id,o.canonical_designation,o.proper_name,o.discovery_year,o.notes,"
+	+ "m.minor_body_type,m.orbit_class,m.mass_kg,m.radius_km,m.albedo "
+	+ "FROM minor_bodies m JOIN catalog_objects o ON o.id=m.object_id "
+	+ "WHERE m.system_id=? ORDER BY o.id"
+)
+const ORBITS_IN_SYSTEM_SQL := (
+	"SELECT r.orbiter_id,r.primary_object_id,r.semi_major_axis_au,"
+	+ "r.eccentricity,r.inclination_deg,r.orbital_period_days,"
+	+ "r.longitude_ascending_node_deg,r.argument_periapsis_deg,"
+	+ "r.mean_anomaly_deg,r.elements_epoch "
+	+ "FROM orbits r "
+	+ "LEFT JOIN stars s ON s.object_id=r.orbiter_id "
+	+ "LEFT JOIN planets p ON p.object_id=r.orbiter_id "
+	+ "LEFT JOIN moons m ON m.object_id=r.orbiter_id "
+	+ "LEFT JOIN minor_bodies b ON b.object_id=r.orbiter_id "
+	+ "WHERE COALESCE(s.system_id,p.system_id,m.system_id,b.system_id)=? "
+	+ "ORDER BY r.orbiter_id"
+)
 const SYSTEMS_IN_BOUNDS_SQL := (
 	"SELECT o.id,o.canonical_designation,"
 	+ "COALESCE(o.proper_name,'') AS proper_name,"
@@ -136,6 +181,38 @@ func systems_in_bounds(bounds: Rect2) -> Array[Anchor]:
 	return systems
 
 
+func system_composition(system_id: StringName) -> Composition:
+	if _database == null or system_id.is_empty():
+		return null
+	var bindings := [String(system_id)]
+	var system_rows = _bound_rows(SYSTEM_EXISTS_SQL, bindings)
+	if system_rows == null or system_rows.size() != 1:
+		return null
+	var star_rows = _bound_rows(STARS_IN_SYSTEM_SQL, bindings)
+	if star_rows == null:
+		return null
+	var planet_rows = _bound_rows(PLANETS_IN_SYSTEM_SQL, bindings)
+	if planet_rows == null:
+		return null
+	var moon_rows = _bound_rows(MOONS_IN_SYSTEM_SQL, bindings)
+	if moon_rows == null:
+		return null
+	var minor_body_rows = _bound_rows(MINOR_BODIES_IN_SYSTEM_SQL, bindings)
+	if minor_body_rows == null:
+		return null
+	var orbit_rows = _bound_rows(ORBITS_IN_SYSTEM_SQL, bindings)
+	if orbit_rows == null:
+		return null
+	return _composition_from_rows(
+		system_id,
+		star_rows,
+		planet_rows,
+		moon_rows,
+		minor_body_rows,
+		orbit_rows
+	)
+
+
 func technical_validation_errors() -> Array[Dictionary]:
 	var findings: Array[Dictionary] = []
 	if _database == null:
@@ -207,6 +284,195 @@ func _anchor_from_row(row: Dictionary) -> Anchor:
 			float(row["galactocentric_z_pc"])
 		)
 	)
+
+
+func _bound_rows(sql: String, bindings: Array):
+	if not _database.query_with_bindings(sql, bindings):
+		return null
+	return _database.query_result.duplicate(true)
+
+
+func _composition_from_rows(
+	system_id: StringName,
+	star_rows: Array,
+	planet_rows: Array,
+	moon_rows: Array,
+	minor_body_rows: Array,
+	orbit_rows: Array
+) -> Composition:
+	var loaded_orbit_parents: Variant = _orbit_parents(orbit_rows)
+	if loaded_orbit_parents == null:
+		return null
+	var orbit_parents: Dictionary = loaded_orbit_parents
+	var primary_star_id := _primary_star_id(star_rows, orbit_parents)
+	if primary_star_id.is_empty():
+		return null
+
+	var stars: Array[Body] = []
+	for row: Dictionary in star_rows:
+		var body_id := StringName(row["id"])
+		var parent_id: StringName = orbit_parents.get(body_id, StringName())
+		if not parent_id.is_empty() and parent_id != primary_star_id:
+			return null
+		stars.append(
+			Body.new(
+				body_id,
+				&"star",
+				String(row["canonical_designation"]),
+				_optional_text(row.get("proper_name")),
+				_optional_name(row.get("spectral_type")),
+				parent_id,
+				_body_properties(
+					row,
+					[&"component", &"mass_solar", &"radius_solar", &"temperature_k", &"luminosity_solar"]
+				)
+			)
+		)
+
+	var planets: Array[Body] = []
+	for row: Dictionary in planet_rows:
+		var body_id := StringName(row["id"])
+		var parent_id: StringName = orbit_parents.get(body_id, StringName())
+		if parent_id.is_empty():
+			return null
+		planets.append(
+			Body.new(
+				body_id,
+				&"planet",
+				String(row["canonical_designation"]),
+				_optional_text(row.get("proper_name")),
+				_optional_name(row.get("planet_class")),
+				parent_id,
+				_body_properties(
+					row,
+					[&"planet_letter", &"mass_earth", &"radius_earth", &"equilibrium_temperature_k"]
+				)
+			)
+		)
+
+	var moons: Array[Body] = []
+	for row: Dictionary in moon_rows:
+		var body_id := StringName(row["id"])
+		var parent_id := StringName(row["planet_id"])
+		if orbit_parents.has(body_id) and orbit_parents[body_id] != parent_id:
+			return null
+		moons.append(
+			Body.new(
+				body_id,
+				&"moon",
+				String(row["canonical_designation"]),
+				_optional_text(row.get("proper_name")),
+				&"moon",
+				parent_id,
+				_body_properties(
+					row,
+					[&"satellite_designation", &"mass_kg", &"radius_km"]
+				)
+			)
+		)
+
+	var minor_bodies: Array[Body] = []
+	for row: Dictionary in minor_body_rows:
+		var body_id := StringName(row["id"])
+		var parent_id: StringName = orbit_parents.get(body_id, StringName())
+		if parent_id.is_empty():
+			return null
+		minor_bodies.append(
+			Body.new(
+				body_id,
+				&"minor_body",
+				String(row["canonical_designation"]),
+				_optional_text(row.get("proper_name")),
+				StringName(row["minor_body_type"]),
+				parent_id,
+				_body_properties(
+					row,
+					[&"orbit_class", &"mass_kg", &"radius_km", &"albedo"]
+				)
+			)
+		)
+
+	var orbits: Array[Orbit] = []
+	for row: Dictionary in orbit_rows:
+		orbits.append(
+			Orbit.new(
+				StringName(row["orbiter_id"]),
+				StringName(row["primary_object_id"]),
+				_present_properties(
+					row,
+					[
+						&"semi_major_axis_au",
+						&"eccentricity",
+						&"inclination_deg",
+						&"orbital_period_days",
+						&"longitude_ascending_node_deg",
+						&"argument_periapsis_deg",
+						&"mean_anomaly_deg",
+						&"elements_epoch",
+					]
+				)
+			)
+		)
+
+	stars.sort_custom(_body_id_less)
+	planets.sort_custom(_body_id_less)
+	moons.sort_custom(_body_id_less)
+	minor_bodies.sort_custom(_body_id_less)
+	orbits.sort_custom(_orbit_id_less)
+	return Composition.new(system_id, stars, planets, moons, minor_bodies, orbits)
+
+
+func _orbit_parents(orbit_rows: Array):
+	var parents := {}
+	for row: Dictionary in orbit_rows:
+		var orbiter_id := StringName(row["orbiter_id"])
+		var primary_id := StringName(row["primary_object_id"])
+		if orbiter_id.is_empty() or primary_id.is_empty() or parents.has(orbiter_id):
+			return null
+		parents[orbiter_id] = primary_id
+	return parents
+
+
+func _primary_star_id(star_rows: Array, orbit_parents: Dictionary) -> StringName:
+	var primary_id := StringName()
+	for row: Dictionary in star_rows:
+		var star_id := StringName(row["id"])
+		if not orbit_parents.has(star_id):
+			if not primary_id.is_empty():
+				return StringName()
+			primary_id = star_id
+	return primary_id
+
+
+func _present_properties(row: Dictionary, keys: Array[StringName]) -> Dictionary:
+	var properties := {}
+	for key: StringName in keys:
+		var column := String(key)
+		if row.has(column) and row[column] != null:
+			properties[column] = row[column]
+	return properties
+
+
+func _body_properties(row: Dictionary, subtype_keys: Array[StringName]) -> Dictionary:
+	var properties := _present_properties(row, [&"discovery_year", &"notes"])
+	properties.merge(_present_properties(row, subtype_keys))
+	return properties
+
+
+func _optional_text(value: Variant) -> String:
+	return "" if value == null else String(value)
+
+
+func _optional_name(value: Variant) -> StringName:
+	return StringName() if value == null else StringName(value)
+
+
+func _body_id_less(left: Body, right: Body) -> bool:
+	return String(left.id) < String(right.id)
+
+
+func _orbit_id_less(left: Orbit, right: Orbit) -> bool:
+	return String(left.orbiter_id) < String(right.orbiter_id)
 
 
 func _check_integrity(findings: Array[Dictionary]) -> bool:
