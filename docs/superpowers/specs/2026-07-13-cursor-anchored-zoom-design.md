@@ -1,6 +1,6 @@
 # Design: zoom do mapa ancorado no cursor
 
-**Data:** 2026-07-13  
+**Data:** 2026-07-13
 **Status:** aprovado
 
 ## Objetivo
