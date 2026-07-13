@@ -9,17 +9,38 @@ const ValidationResult = preload(
 )
 const Validator = preload("res://scripts/application/catalog/catalog_validator.gd")
 
+class FailingValidationDatabase:
+	extends RefCounted
+
+	var error_message := "synthetic validation failure"
+	var query_result: Array = []
+	var query_calls := 0
+	var close_calls := 0
+
+
+	func query(_sql: String) -> bool:
+		query_calls += 1
+		return false
+
+
+	func close_db() -> bool:
+		close_calls += 1
+		return true
+
+
 var _fixture_sequence := 0
 
 
 func run() -> void:
 	_test_validation_result_preserves_order_and_encapsulation()
 	_test_valid_catalog_passes()
+	_test_blank_designations_do_not_count_as_duplicates()
 	_test_missing_metadata_is_explicit()
 	_test_foreign_key_violation_is_explicit()
 	_test_closed_catalog_stops_without_cascade()
 	_test_unsupported_schema_is_explicit()
 	_test_relational_and_coordinate_invariants_are_explicit()
+	_test_query_failure_stops_validation_without_cascade()
 
 
 func _test_validation_result_preserves_order_and_encapsulation() -> void:
@@ -50,6 +71,25 @@ func _test_valid_catalog_passes() -> void:
 	var result = Validator.new().validate(repository)
 	assert_true(result.is_valid(), "valid catalog passes")
 	assert_true(result.codes().is_empty(), "valid catalog has no codes")
+	repository.close()
+	fixture.cleanup()
+
+
+func _test_blank_designations_do_not_count_as_duplicates() -> void:
+	var fixture = _new_fixture("blank_designations")
+	assert_true(fixture.prepare(), "blank designation fixture is prepared")
+	var database = _open_writable(fixture.path)
+	assert_true(_write_blank_designations(database), "blank designations are committed")
+	database.close_db()
+
+	var repository = Repository.new(fixture.path)
+	assert_true(repository.open(), "blank designation catalog opens")
+	var result = Validator.new().validate(repository)
+	assert_true(result.is_valid(), "blank canonical designations do not invalidate catalog")
+	assert_true(
+		not result.codes().has(&"DUPLICATE_DESIGNATION"),
+		"blank canonical designations are ignored by duplicate detection"
+	)
 	repository.close()
 	fixture.cleanup()
 
@@ -152,6 +192,17 @@ func _test_unsupported_schema_is_explicit() -> void:
 	fixture.cleanup()
 
 
+func _test_query_failure_stops_validation_without_cascade() -> void:
+	var repository = Repository.new("user://unused_query_failure.sqlite")
+	var database = FailingValidationDatabase.new()
+	repository.set("_database", database)
+	var result = Validator.new().validate(repository)
+	assert_equal(result.codes(), [&"SQLITE_QUERY"], "query failure is the only finding")
+	assert_equal(database.query_calls, 1, "validation stops after the first failed query")
+	repository.close()
+	assert_equal(database.close_calls, 1, "injected connection is closed safely")
+
+
 func _new_fixture(label: String) -> Fixture:
 	_fixture_sequence += 1
 	return Fixture.new(
@@ -237,6 +288,28 @@ func _write_broken_invariants(database) -> bool:
 		succeeded = database.query_with_bindings(
 			"UPDATE stellar_systems SET galactocentric_x_pc=? WHERE object_id=?",
 			[1.0e9, "catalog:fixture-boundary"]
+		)
+	if succeeded and database.query("COMMIT"):
+		return true
+	database.query("ROLLBACK")
+	return false
+
+
+func _write_blank_designations(database) -> bool:
+	if not database.query("BEGIN TRANSACTION"):
+		return false
+	var succeeded := _insert_object(database, "catalog:blank-a", "star", "")
+	if succeeded:
+		succeeded = database.query_with_bindings(
+			"INSERT INTO stars (object_id,system_id,component) VALUES (?,?,?)",
+			["catalog:blank-a", "catalog:fixture", "blank-a"]
+		)
+	if succeeded:
+		succeeded = _insert_object(database, "catalog:blank-b", "star", "   ")
+	if succeeded:
+		succeeded = database.query_with_bindings(
+			"INSERT INTO stars (object_id,system_id,component) VALUES (?,?,?)",
+			["catalog:blank-b", "catalog:fixture", "blank-b"]
 		)
 	if succeeded and database.query("COMMIT"):
 		return true

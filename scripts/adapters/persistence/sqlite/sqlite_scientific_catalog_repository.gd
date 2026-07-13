@@ -69,7 +69,8 @@ const NON_FINITE_COORDINATE_SQL := (
 )
 const DUPLICATE_DESIGNATION_SQL := (
 	"SELECT lower(trim(canonical_designation)) AS normalized_designation "
-	+ "FROM catalog_objects GROUP BY lower(trim(canonical_designation)) "
+	+ "FROM catalog_objects WHERE trim(canonical_designation)<>'' "
+	+ "GROUP BY lower(trim(canonical_designation)) "
 	+ "HAVING COUNT(*)>1 LIMIT 1"
 )
 
@@ -143,48 +144,55 @@ func technical_validation_errors() -> Array[Dictionary]:
 
 	if not _check_integrity(findings):
 		return findings
-	_append_if_rows(
+	if not _append_if_rows(
 		findings,
 		&"FOREIGN_KEY",
 		"Catalog contains foreign key violations",
 		"PRAGMA foreign_key_check"
-	)
-	_append_if_rows(
+	):
+		return findings
+	if not _append_if_rows(
 		findings,
 		&"METADATA_COUNT",
 		"Catalog must contain exactly one metadata row",
 		"SELECT COUNT(*) FROM catalog_metadata HAVING COUNT(*)<>1"
-	)
-	_append_if_rows(
+	):
+		return findings
+	if not _append_if_rows(
 		findings,
 		&"SUBTYPE_MISMATCH",
 		"Catalog object subtype does not match its declared kind",
 		SUBTYPE_MISMATCH_SQL
-	)
-	_append_if_rows(
+	):
+		return findings
+	if not _append_if_rows(
 		findings,
 		&"CROSS_SYSTEM_PARENT",
 		"Catalog relationship crosses stellar system boundaries",
 		CROSS_SYSTEM_PARENT_SQL
-	)
-	_append_if_rows(
+	):
+		return findings
+	if not _append_if_rows(
 		findings,
 		&"ORBIT_CYCLE",
 		"Catalog orbit graph contains a cycle",
 		ORBIT_CYCLE_SQL
-	)
-	_append_if_rows(
+	):
+		return findings
+	if not _append_if_rows(
 		findings,
 		&"NON_FINITE_COORDINATE",
 		"Catalog system has a non-finite or out-of-range coordinate",
 		NON_FINITE_COORDINATE_SQL
-	)
-	_append_if_rows(
+	):
+		return findings
+	if not _append_if_rows(
 		findings,
 		&"DUPLICATE_DESIGNATION",
 		"Catalog contains duplicate normalized canonical designations",
 		DUPLICATE_DESIGNATION_SQL
-	)
+	):
+		return findings
 	return findings
 
 
@@ -203,7 +211,6 @@ func _anchor_from_row(row: Dictionary) -> Anchor:
 
 func _check_integrity(findings: Array[Dictionary]) -> bool:
 	if not _database.query("PRAGMA integrity_check"):
-		findings.append(_finding(&"SQLITE_INTEGRITY", "SQLite integrity check failed"))
 		_append_query_failure(findings, &"SQLITE_INTEGRITY")
 		return false
 	if _database.query_result.is_empty():
@@ -222,12 +229,13 @@ func _append_if_rows(
 	code: StringName,
 	message: String,
 	sql: String
-) -> void:
+) -> bool:
 	if not _database.query(sql):
 		_append_query_failure(findings, code)
-		return
+		return false
 	if not _database.query_result.is_empty():
 		findings.append(_finding(code, message))
+	return true
 
 
 func _append_query_failure(findings: Array[Dictionary], check_code: StringName) -> void:
