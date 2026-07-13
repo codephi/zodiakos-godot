@@ -188,6 +188,16 @@ func run() -> void:
 		"system_planet_type_weights must contain positive values"
 	)
 
+	var missing_enabled_style = Settings.duplicate(true)
+	missing_enabled_style.planet_styles.erase(&"gas")
+	assert_true(
+		missing_enabled_style.validation_errors().has(
+			"system_planet_types has no planet_styles entry: gas"
+		),
+		"every enabled procedural planet type requires a visual style"
+	)
+	assert_true(not missing_enabled_style.is_valid(), "missing enabled style is invalid")
+
 	var invalid_radii = Settings.duplicate(true)
 	invalid_radii.galaxy_disk_radius_pc = invalid_radii.galaxy_halo_radius_pc
 	assert_true(

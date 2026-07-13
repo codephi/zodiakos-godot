@@ -1,6 +1,13 @@
 class_name GameSettings
 extends Resource
 
+const SUPPORTED_PLANET_TYPES: Array[StringName] = [
+	&"rocky",
+	&"gas",
+	&"ice",
+	&"volcanic",
+]
+
 @export_category("Map Camera")
 @export var camera_min_zoom: float
 @export var camera_max_zoom: float
@@ -188,15 +195,19 @@ func _validate_system_composition(errors: PackedStringArray) -> void:
 	if system_planet_types.size() != system_planet_type_weights.size():
 		errors.append("system planet types and weights must have matching sizes")
 	var seen_types := {}
-	var supported_types: Array[StringName] = [&"rocky", &"gas", &"ice", &"volcanic"]
 	for planet_type in system_planet_types:
 		if seen_types.has(planet_type):
 			errors.append("system_planet_types must contain unique values")
-		else:
-			seen_types[planet_type] = true
-		if not supported_types.has(planet_type):
+			continue
+		seen_types[planet_type] = true
+		if not SUPPORTED_PLANET_TYPES.has(planet_type):
 			errors.append(
 				"system_planet_types contains unsupported value: %s" % planet_type
+			)
+			continue
+		if not planet_styles.has(planet_type):
+			errors.append(
+				"system_planet_types has no planet_styles entry: %s" % planet_type
 			)
 	for weight in system_planet_type_weights:
 		if weight <= 0:
