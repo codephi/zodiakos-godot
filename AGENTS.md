@@ -32,6 +32,12 @@ These instructions apply to the entire repository.
 - Run the relevant automated tests and a Godot smoke check before declaring a task complete.
 - Do not hide warnings, failing checks, or incomplete behavior.
 
+## Central Game Settings
+
+- Put every new tunable gameplay, map, camera, generation, presentation, lighting, or demo value in `config/game_settings.tres`.
+- Declare its typed Inspector field and validation in `scripts/config/game_settings.gd`.
+- Do not duplicate production tuning values as local constants or defaults; keep only structural and mathematical invariants in code.
+
 ## Git Workflow
 
 - Inspect `git status -sb` and the relevant diff before staging.

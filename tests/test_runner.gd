@@ -1,6 +1,7 @@
 extends SceneTree
 
 const TEST_SCRIPTS := [
+	preload("res://tests/config/test_game_settings.gd"),
 	preload("res://tests/domain/universe/test_universe_coordinates.gd"),
 	preload("res://tests/domain/universe/test_generation_foundations.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),

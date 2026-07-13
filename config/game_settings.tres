@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="GameSettings" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/config/game_settings.gd" id="1_settings"]
+
+[resource]
+script = ExtResource("1_settings")
+camera_min_zoom = 20.0
+camera_max_zoom = 300.0
+camera_initial_zoom = 50.0
+camera_zoom_factor = 0.88
+camera_height = 40.0
+camera_drag_threshold_pixels = 4.0
+stream_initial_load_radii = Vector2i(2, 2)
+stream_load_margin = 1
+stream_unload_margin = 1
+stream_min_aspect_ratio = 0.25
+stream_max_aspect_ratio = 4.0
+stream_sectors_per_frame = 2
+universe_global_seed = 6507495067992411987
+universe_generator_version = 1
+universe_sector_size = 40.0
+universe_min_clusters = 0
+universe_max_clusters = 2
+universe_min_cluster_stars = 8
+universe_max_cluster_stars = 20
+universe_min_cluster_radius = 8.0
+universe_max_cluster_radius = 18.0
+universe_max_isolated_stars = 3
+universe_minimum_star_distance = 1.5
+universe_max_stars_per_sector = 64
+universe_visual_types = Array[StringName]([&"yellow", &"red", &"white", &"orange", &"blue"])
+universe_visual_type_weights = Array[int]([35, 25, 20, 15, 5])
+neutral_owner_color = Color(0.5, 0.5, 0.5, 1)
+ship_styles = {
+&"colony": {"color": Color(1, 0.705882, 0.235294, 1), "scale": 1.0},
+&"expedition": {"color": Color(0.258824, 0.85098, 1, 1), "scale": 0.7},
+&"war": {"color": Color(0.937255, 0.294118, 0.294118, 1), "scale": 1.3}
+}
+star_styles = {
+&"blue": {"color": Color(0.72549, 0.866667, 1, 1), "scale": 1.3},
+&"orange": {"color": Color(1, 0.607843, 0.270588, 1), "scale": 0.9},
+&"red": {"color": Color(1, 0.419608, 0.376471, 1), "scale": 0.8},
+&"white": {"color": Color(1, 1, 1, 1), "scale": 1.1},
+&"yellow": {"color": Color(1, 0.898039, 0.541176, 1), "scale": 1.0}
+}
+planet_styles = {
+&"gas": {"color": Color(0.65098, 0.478431, 0.819608, 1)},
+&"ice": {"color": Color(0.556863, 0.847059, 0.937255, 1)},
+&"rocky": {"color": Color(0.560784, 0.505882, 0.458824, 1)},
+&"volcanic": {"color": Color(0.858824, 0.415686, 0.196078, 1)}
+}
+star_sphere_radial_segments = 16
+star_sphere_rings = 8
+planet_sphere_radial_segments = 12
+planet_sphere_rings = 6
+planet_minimum_scale = 0.1
+ring_thickness = 0.04
+ring_rings = 16
+ring_segments = 6
+star_selected_ring_radius = 0.82
+star_owner_ring_radius = 0.75
+ship_owner_ring_radius = 0.65
+ship_owner_ring_height = -0.2
+ship_prism_size = Vector3(0.8, 0.3, 1.4)
+zodiac_area_opacity = 0.22
+material_emission_multiplier = 1.8
+map_background_color = Color(0.027451, 0.066667, 0.121569, 1)
+map_ambient_light_color = Color(1, 1, 1, 1)
+map_ambient_light_energy = 1.0
+demo_owner_color = Color(0.333333, 0.654902, 1, 1)
+demo_camera_position = Vector3(0, 19, 20)
+demo_camera_rotation_degrees = Vector3(-43, 0, 0)
+demo_camera_fov = 48.0
+demo_light_rotation_degrees = Vector3(-55, -30, 0)
+demo_light_energy = 1.4
+demo_background_color = Color(0.027451, 0.066667, 0.121569, 1)
+demo_ambient_light_color = Color(0.4, 0.533333, 0.666667, 1)
+demo_ambient_light_energy = 1.2
+demo_territory_line_thickness = 0.09
+demo_route_line_thickness = 0.04
+demo_route_color = Color(1, 0.87451, 0.501961, 1)
+demo_star_types = Array[StringName]([&"blue", &"white", &"yellow", &"orange", &"red"])
+demo_ship_classes = Array[StringName]([&"expedition", &"colony", &"war"])
+demo_planet_types = Array[StringName]([&"rocky", &"gas", &"ice", &"volcanic"])
