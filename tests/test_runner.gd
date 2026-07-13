@@ -11,6 +11,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/domain/universe/test_generation_foundations.gd"),
 	preload("res://tests/domain/universe/test_galactic_density_model.gd"),
 	preload("res://tests/domain/universe/test_stellar_system_definition.gd"),
+	preload("res://tests/domain/universe/test_system_composition.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),
 	preload("res://tests/application/universe/test_load_galaxy_sector.gd"),
 	preload("res://tests/application/projections/test_visible_sector_projection.gd"),
