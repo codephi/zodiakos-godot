@@ -34,7 +34,11 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	get_viewport().size_changed.connect(_refresh_stream_coverage)
+	var viewport := get_viewport()
+	if viewport == null:
+		viewport = Engine.get_main_loop().root
+	if not viewport.size_changed.is_connected(_refresh_stream_coverage):
+		viewport.size_changed.connect(_refresh_stream_coverage)
 	_refresh_stream_coverage()
 
 
@@ -77,8 +81,11 @@ func _on_zoom_changed(_new_size: float) -> void:
 	)
 
 
-func _refresh_stream_coverage() -> void:
-	var viewport := get_viewport()
-	if viewport == null:
-		viewport = Engine.get_main_loop().root
-	stream.update_view(map_camera.size, viewport.get_visible_rect().size)
+func _refresh_stream_coverage(viewport_size := Vector2.ZERO) -> void:
+	var next_viewport_size: Vector2 = viewport_size
+	if next_viewport_size == Vector2.ZERO:
+		var viewport := get_viewport()
+		if viewport == null:
+			viewport = Engine.get_main_loop().root
+		next_viewport_size = viewport.get_visible_rect().size
+	stream.update_view(map_camera.size, next_viewport_size)

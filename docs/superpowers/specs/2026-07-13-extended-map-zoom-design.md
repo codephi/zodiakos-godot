@@ -19,6 +19,8 @@ O `MapCameraController` passa a limitar o afastamento em `300.0`. Como o streami
 
 O cálculo usará o tamanho ortográfico, a proporção da viewport e o tamanho canônico do setor. Uma margem de um setor será mantida além da área visível para evitar surgimento tardio de estrelas nas bordas. A descarga usará uma margem adicional de histerese para impedir carga e remoção repetidas durante pequenos movimentos.
 
+Para manter a cobertura finita em janelas degeneradas e em formatos extremos de PC ou mobile, a proporção usada pelo streaming será limitada ao intervalo `0.25..4.0`. A viewport real não será redimensionada; somente o cálculo preventivo de setores adotará esse limite seguro.
+
 Ao mudar o zoom ou o tamanho da viewport, o controlador atualizará a projeção e enfileirará apenas os setores novos. Setores já ativos não serão regenerados. O carregamento continuará progressivo e limitado por frame.
 
 O domínio procedural e a materialização visual permanecem inalterados. Mesmo no limite `300.0`, somente uma região finita ao redor da câmera ficará ativa.

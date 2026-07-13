@@ -12,6 +12,26 @@ func run() -> void:
 		Vector2i(8, 5),
 		"maximum zoom covers 16:9 viewport plus one sector margin"
 	)
+	assert_equal(
+		projection.load_radii(300.0, 9.0 / 16.0),
+		Vector2i(4, 5),
+		"portrait coverage follows the visible width"
+	)
+	assert_equal(
+		projection.load_radii(300.0, 32.0 / 9.0),
+		Vector2i(15, 5),
+		"ultrawide coverage follows the visible width"
+	)
+	assert_equal(
+		projection.load_radii(300.0, 1920.0),
+		Vector2i(16, 5),
+		"degenerate wide viewports clamp to a safe coverage"
+	)
+	assert_equal(
+		projection.load_radii(300.0, 1.0 / 1920.0),
+		Vector2i(2, 5),
+		"degenerate tall viewports retain safe horizontal coverage"
+	)
 	var maximum_order = projection.load_order(center, {}, {}, Vector2i(8, 5))
 	assert_equal(
 		maximum_order.size(),

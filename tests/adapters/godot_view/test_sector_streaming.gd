@@ -21,6 +21,44 @@ class CountingGenerator extends RefCounted:
 		return delegate.generate_sector(coordinate)
 
 
+class TrackingView extends RefCounted:
+	var delegate = View.new()
+	var rebase_calls := 0
+
+
+	func materialize_sector(sector, origin) -> void:
+		delegate.materialize_sector(sector, origin)
+
+
+	func remove_sector(coordinate) -> void:
+		delegate.remove_sector(coordinate)
+
+
+	func rebase(origin) -> void:
+		rebase_calls += 1
+		delegate.rebase(origin)
+
+
+	func active_keys() -> Dictionary:
+		return delegate.active_keys()
+
+
+	func active_coordinates() -> Array:
+		return delegate.active_coordinates()
+
+
+	func active_sector_count() -> int:
+		return delegate.active_sector_count()
+
+
+	func star_count() -> int:
+		return delegate.star_count()
+
+
+	func free_delegate() -> void:
+		delegate.free()
+
+
 func run() -> void:
 	_test_bounded_streaming_and_deterministic_rematerialization()
 	_test_rapid_center_change_discards_stale_pending_sectors()
@@ -29,8 +67,11 @@ func run() -> void:
 	_test_star_resources_are_shared_and_neutral_ring_is_not_configured()
 	_test_stats_emit_only_when_observable_state_changes()
 	_test_active_sector_is_not_regenerated()
+	_test_intra_sector_motion_preserves_stream_state()
+	_test_view_update_reconciles_even_when_radii_are_unchanged()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
 	_test_non_positive_viewport_width_is_ignored()
+	_test_extreme_positive_viewport_is_safely_bounded()
 	_test_invalid_visual_type_materializes_with_safe_fallback()
 
 
@@ -172,6 +213,56 @@ func _test_active_sector_is_not_regenerated() -> void:
 	view.free()
 
 
+func _test_intra_sector_motion_preserves_stream_state() -> void:
+	var generator = CountingGenerator.new()
+	var view = TrackingView.new()
+	var controller = Controller.new()
+	var origin = PositionType.new(Coordinate.new(), Vector2.ZERO)
+	controller.configure(generator, view, origin)
+	controller.process_pending(1)
+	var first_pending = controller.pending[0]
+	var queued_before: Dictionary = controller.queued.duplicate()
+	var active_before: Dictionary = view.active_keys()
+	var calls_before: Dictionary = generator.calls_by_sector.duplicate()
+	var rebase_calls_before: int = view.rebase_calls
+
+	controller.update_center(PositionType.new(Coordinate.new(), Vector2(12.0, 7.0)))
+
+	assert_equal(view.rebase_calls, rebase_calls_before, "intra-sector motion does not rebase")
+	assert_true(
+		is_same(controller.pending[0], first_pending),
+		"intra-sector motion preserves the pending queue"
+	)
+	assert_equal(controller.queued, queued_before, "intra-sector motion preserves queued keys")
+	assert_equal(view.active_keys(), active_before, "intra-sector motion preserves active sectors")
+	assert_equal(
+		generator.calls_by_sector,
+		calls_before,
+		"intra-sector motion does not invoke the generator"
+	)
+	controller.free()
+	view.free_delegate()
+
+
+func _test_view_update_reconciles_even_when_radii_are_unchanged() -> void:
+	var view = TrackingView.new()
+	var controller = Controller.new()
+	controller.configure(
+		Generator.new(),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	var rebase_calls_before: int = view.rebase_calls
+	controller.update_view(50.0, Vector2(1920.0, 1080.0))
+	assert_equal(
+		view.rebase_calls,
+		rebase_calls_before + 1,
+		"view updates reconcile even when their rounded radii are unchanged"
+	)
+	controller.free()
+	view.free_delegate()
+
+
 func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> void:
 	var generator = CountingGenerator.new()
 	var view = View.new()
@@ -240,6 +331,29 @@ func _test_non_positive_viewport_width_is_ignored() -> void:
 		generator.calls_by_sector,
 		calls_before,
 		"negative viewport width skips generation"
+	)
+	controller.free()
+	view.free()
+
+
+func _test_extreme_positive_viewport_is_safely_bounded() -> void:
+	var controller = Controller.new()
+	var view = View.new()
+	controller.configure(
+		Generator.new(),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	controller.update_view(300.0, Vector2(1920.0, 1.0))
+	assert_equal(
+		controller.load_radii,
+		Vector2i(16, 5),
+		"one-pixel viewport height cannot create an unbounded stream"
+	)
+	assert_equal(
+		controller.pending.size(),
+		363,
+		"bounded extreme coverage queues at most 33 by 11 sectors"
 	)
 	controller.free()
 	view.free()

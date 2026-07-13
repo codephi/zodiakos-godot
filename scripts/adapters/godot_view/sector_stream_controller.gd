@@ -25,7 +25,10 @@ func configure(source_generator, target_view, initial_position) -> void:
 
 
 func update_center(position) -> void:
-	center = position.sector.offset(0, 0)
+	var next_center = position.sector.offset(0, 0)
+	if center != null and center.equals(next_center):
+		return
+	center = next_center
 	_reconcile_stream()
 
 
@@ -36,10 +39,9 @@ func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
 		orthographic_size,
 		viewport_size.x / viewport_size.y
 	)
-	if next_load == load_radii:
-		return
-	load_radii = next_load
-	unload_radii = projection.unload_radii(load_radii)
+	if next_load != load_radii:
+		load_radii = next_load
+		unload_radii = projection.unload_radii(load_radii)
 	_reconcile_stream()
 
 

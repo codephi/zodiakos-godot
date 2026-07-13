@@ -15,21 +15,62 @@ if (-not (Test-Path -LiteralPath $wrapperPath -PathType Leaf)) {
     throw 'The native Godot test wrapper does not exist.'
 }
 
-$powerShellPath = (Get-Process -Id $PID).Path
-$focusedOutput = & $powerShellPath -NoProfile -File $wrapperPath `
-    -Suite 'res://tests/domain/universe/test_universe_generator.gd' 2>&1
-if ($LASTEXITCODE -ne 0) {
-    throw "Focused wrapper run failed:`n$($focusedOutput -join [Environment]::NewLine)"
-}
-if (($focusedOutput -join [Environment]::NewLine) -notmatch 'TESTS PASSED') {
-    throw 'Focused wrapper run did not preserve the Godot success marker.'
+function Invoke-WrapperProcess([string[]]$Arguments) {
+    $captureDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("zodiakos-wrapper-check-{0}" -f [guid]::NewGuid())
+    $stdoutPath = Join-Path $captureDirectory 'stdout.txt'
+    $stderrPath = Join-Path $captureDirectory 'stderr.txt'
+    New-Item -ItemType Directory -Path $captureDirectory | Out-Null
+    try {
+        $processArguments = @('-NoProfile', '-File', $wrapperPath) + $Arguments
+        $process = Start-Process -FilePath (Get-Process -Id $PID).Path `
+            -ArgumentList $processArguments `
+            -Wait `
+            -PassThru `
+            -NoNewWindow `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath
+        $stdout = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -Raw -LiteralPath $stdoutPath } else { '' }
+        $stderr = if (Test-Path -LiteralPath $stderrPath) { Get-Content -Raw -LiteralPath $stderrPath } else { '' }
+        return [pscustomobject]@{
+            ExitCode = $process.ExitCode
+            Output = $stdout + $stderr
+        }
+    } finally {
+        Remove-Item -LiteralPath $captureDirectory -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
-$runtimeErrorOutput = & $powerShellPath -NoProfile -File $wrapperPath `
-    -RunnerScript 'res://tests/fixtures/runtime_error_test_runner.gd' 2>&1
-if ($LASTEXITCODE -eq 0) {
-    throw "Wrapper accepted Godot stderr alongside TESTS PASSED:`n$($runtimeErrorOutput -join [Environment]::NewLine)"
+$originalGodotBin = $env:GODOT_BIN
+try {
+    $env:GODOT_BIN = Join-Path $env:LOCALAPPDATA 'Programs\Godot\4.7\Godot_v4.7-stable_win64.exe'
+    $focusedResult = Invoke-WrapperProcess @(
+        '-Suite',
+        'res://tests/domain/universe/test_universe_generator.gd'
+    )
+    if ($focusedResult.ExitCode -ne 0) {
+        throw "Focused wrapper run failed with GUI GODOT_BIN:`n$($focusedResult.Output)"
+    }
+    $focusedText = $focusedResult.Output
+    if ($focusedText -notmatch 'TESTS PASSED') {
+        throw 'Focused wrapper run did not preserve the Godot success marker.'
+    }
+    if ($focusedText -notmatch 'godot_console\.exe') {
+        throw 'Wrapper did not resolve GUI GODOT_BIN to the console companion.'
+    }
+} finally {
+    $env:GODOT_BIN = $originalGodotBin
+}
+
+$runtimeErrorResult = Invoke-WrapperProcess @(
+    '-RunnerScript',
+    'res://tests/fixtures/runtime_error_test_runner.gd'
+)
+if ($runtimeErrorResult.ExitCode -eq 0) {
+    throw "Wrapper accepted Godot stderr alongside TESTS PASSED:`n$($runtimeErrorResult.Output)"
+}
+$runtimeErrorText = $runtimeErrorResult.Output
+if ($runtimeErrorText -notmatch 'missing_runtime_method') {
+    throw "Wrapper failure did not expose the runtime error:`n$runtimeErrorText"
 }
 
 Write-Output 'TASK 3 REVIEW CHECKS PASSED'
-exit 0

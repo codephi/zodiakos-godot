@@ -7,6 +7,7 @@ func run() -> void:
 	_test_composes_infinite_map_and_progressively_loads_initial_sectors()
 	_test_hud_reports_map_stats_and_zoom()
 	_test_maximum_zoom_refreshes_stream_coverage_and_hud()
+	_test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage()
 
 
 func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> void:
@@ -55,5 +56,32 @@ func _test_maximum_zoom_refreshes_stream_coverage_and_hud() -> void:
 	assert_true(
 		demo.get_node("DebugHud/Stats").text.contains("Zoom: 300.0"),
 		"HUD reports maximum zoom"
+	)
+	demo.free()
+
+
+func _test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage() -> void:
+	var demo = Demo.instantiate()
+	demo._ready()
+	var camera = demo.get_node("MapCamera")
+	var stream = demo.get_node("SectorStreamController")
+	camera.apply_zoom_steps(-200)
+	assert_true(
+		Engine.get_main_loop().root.size_changed.is_connected(
+			demo._refresh_stream_coverage
+		),
+		"demo connects viewport resize signal to stream refresh"
+	)
+	demo._refresh_stream_coverage(Vector2(900.0, 1600.0))
+	assert_equal(
+		stream.load_radii,
+		Vector2i(4, 5),
+		"portrait resize provides portrait stream coverage"
+	)
+	demo._refresh_stream_coverage(Vector2(3200.0, 900.0))
+	assert_equal(
+		stream.load_radii,
+		Vector2i(15, 5),
+		"ultrawide resize refreshes stream coverage"
 	)
 	demo.free()

@@ -4,11 +4,18 @@ extends RefCounted
 const Scale = preload("res://scripts/domain/universe/universe_scale.gd")
 const LOAD_MARGIN := 1
 const UNLOAD_MARGIN := 1
+const MINIMUM_ASPECT_RATIO := 0.25
+const MAXIMUM_ASPECT_RATIO := 4.0
 
 
 func load_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
 	var half_height := maxf(orthographic_size, 0.0) * 0.5
-	var half_width := half_height * maxf(aspect_ratio, 0.0)
+	var safe_aspect_ratio := clampf(
+		aspect_ratio,
+		MINIMUM_ASPECT_RATIO,
+		MAXIMUM_ASPECT_RATIO
+	)
+	var half_width := half_height * safe_aspect_ratio
 	return Vector2i(
 		ceili(half_width / Scale.SECTOR_SIZE) + LOAD_MARGIN,
 		ceili(half_height / Scale.SECTOR_SIZE) + LOAD_MARGIN
