@@ -116,4 +116,6 @@ func _assert_resolution_uses_local_winners(generator) -> void:
 	trailing.priority = 3
 	var resolved = generator._resolve_candidates([winner, middle, trailing])
 	assert_equal(resolved.size(), 1, "local resolution rejects candidates beaten by any neighbor")
+	if resolved.size() != 1:
+		return
 	assert_equal(resolved[0].id, &"winner", "lowest-priority local candidate survives")

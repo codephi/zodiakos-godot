@@ -23,8 +23,8 @@ func _init(seed := Config.GLOBAL_SEED) -> void:
 	global_seed = seed
 
 
-func generate_sector(target) -> RefCounted:
-	var candidates := _generate_nearby_candidates(target)
+func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
+	var candidates := _generate_nearby_candidates(coordinate)
 	var accepted := _resolve_candidates(candidates)
 
 	var stars := []
@@ -34,7 +34,7 @@ func generate_sector(target) -> RefCounted:
 		stars.append(
 			Star.new(
 				candidate.id,
-				target.offset(0, 0),
+				coordinate.offset(0, 0),
 				candidate.position,
 				candidate.visual_type,
 				candidate.source,
@@ -44,7 +44,7 @@ func generate_sector(target) -> RefCounted:
 		)
 		if stars.size() == Config.MAX_STARS_PER_SECTOR:
 			break
-	return Sector.new(target.offset(0, 0), stars)
+	return Sector.new(coordinate.offset(0, 0), stars)
 
 
 func _resolve_candidates(candidates: Array) -> Array:

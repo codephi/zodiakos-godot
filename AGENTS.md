@@ -28,6 +28,7 @@ These instructions apply to the entire repository.
 ## Quality
 
 - Use test-driven development for gameplay behavior: write a failing test, implement the smallest change, make the test pass, then refactor.
+- Run Godot tests through native Windows PowerShell with `./tools/run_godot_tests.ps1`; pass `-Suite 'res://path/to/test.gd'` for a focused registered suite.
 - Run the relevant automated tests and a Godot smoke check before declaring a task complete.
 - Do not hide warnings, failing checks, or incomplete behavior.
 

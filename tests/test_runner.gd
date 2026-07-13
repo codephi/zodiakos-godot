@@ -12,7 +12,12 @@ const TEST_SCRIPTS := [
 
 func _initialize() -> void:
 	var failures := 0
-	for test_script in TEST_SCRIPTS:
+	var test_scripts := _selected_test_scripts()
+	if test_scripts.is_empty():
+		push_error("Requested test suite was not registered")
+		quit(1)
+		return
+	for test_script in test_scripts:
 		if not test_script.can_instantiate():
 			failures += 1
 			push_error("Test suite could not be instantiated: %s" % test_script.resource_path)
@@ -26,3 +31,16 @@ func _initialize() -> void:
 	else:
 		push_error("%d TESTS FAILED" % failures)
 	quit(failures)
+
+
+func _selected_test_scripts() -> Array:
+	var requested_suite := ""
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--test-suite="):
+			requested_suite = argument.trim_prefix("--test-suite=")
+	if requested_suite.is_empty():
+		return TEST_SCRIPTS
+	for test_script in TEST_SCRIPTS:
+		if test_script.resource_path == requested_suite:
+			return [test_script]
+	return []
