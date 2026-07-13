@@ -8,7 +8,9 @@ const Repository = preload("res://scripts/application/ports/scientific_catalog_r
 func run() -> void:
 	_test_catalog_metadata_exposes_versions()
 	_test_system_anchor_exposes_identity_and_position()
+	_test_records_reject_public_property_mutation()
 	_test_repository_port_is_inert()
+	_test_repository_port_exposes_typed_domain_results()
 
 
 func _test_catalog_metadata_exposes_versions() -> void:
@@ -28,6 +30,16 @@ func _test_system_anchor_exposes_identity_and_position() -> void:
 	assert_equal(anchor.map_position(), Vector2(8150.0, 0.0), "anchor maps x and y")
 
 
+func _test_records_reject_public_property_mutation() -> void:
+	var metadata = Metadata.new(1, 2, 3)
+	metadata.set(&"catalog_version", 99)
+	assert_equal(metadata.get(&"catalog_version"), 2, "metadata rejects public mutation")
+
+	var anchor = Anchor.new(&"catalog:sol", "Sol", "Sun", Vector3(8150.0, 0.0, 20.8))
+	anchor.set(&"proper_name", "Changed")
+	assert_equal(anchor.get(&"proper_name"), "Sun", "anchor rejects public mutation")
+
+
 func _test_repository_port_is_inert() -> void:
 	var repository = Repository.new()
 	assert_equal(repository.open(), false, "base port does not open")
@@ -38,3 +50,28 @@ func _test_repository_port_is_inert() -> void:
 		repository.technical_validation_errors().is_empty(),
 		"base port has no technical validation errors"
 	)
+
+
+func _test_repository_port_exposes_typed_domain_results() -> void:
+	var repository = Repository.new()
+	var methods_by_name := {}
+	for method in repository.get_script().get_script_method_list():
+		methods_by_name[method.name] = method
+	var metadata_return: Dictionary = methods_by_name.metadata.return
+	var systems_return: Dictionary = methods_by_name.systems_in_bounds.return
+	assert_equal(metadata_return.type, TYPE_OBJECT, "metadata return is an object contract")
+	assert_equal(
+		metadata_return.class_name,
+		&"CatalogMetadata",
+		"metadata return names the catalog domain record"
+	)
+	assert_equal(systems_return.type, TYPE_ARRAY, "systems return is an array contract")
+	assert_equal(
+		systems_return.hint_string,
+		"SystemAnchor",
+		"systems array names the anchor domain record"
+	)
+	var catalog_metadata: Metadata = repository.metadata()
+	var anchors: Array[Anchor] = repository.systems_in_bounds(Rect2())
+	assert_equal(catalog_metadata, null, "typed metadata remains empty in the base port")
+	assert_true(anchors.is_empty(), "typed anchor result remains empty in the base port")
