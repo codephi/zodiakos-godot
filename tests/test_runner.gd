@@ -12,6 +12,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/domain/universe/test_galactic_density_model.gd"),
 	preload("res://tests/domain/universe/test_stellar_system_definition.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),
+	preload("res://tests/application/universe/test_load_galaxy_sector.gd"),
 	preload("res://tests/application/projections/test_visible_sector_projection.gd"),
 	preload("res://tests/adapters/godot_view/test_map_camera_controller.gd"),
 	preload("res://tests/adapters/godot_view/test_sector_streaming.gd"),

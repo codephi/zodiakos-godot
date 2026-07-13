@@ -6,6 +6,9 @@ const CandidateGenerator = preload(
 )
 const DensityModel = preload("res://scripts/domain/universe/galactic_density_model.gd")
 const Identity = preload("res://scripts/domain/universe/universe_identity.gd")
+const CollisionResolver = preload(
+	"res://scripts/domain/universe/system_collision_resolver.gd"
+)
 const System = preload("res://scripts/domain/universe/stellar_system_definition.gd")
 const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
 const DefaultSettings = preload("res://config/game_settings.tres")
@@ -50,7 +53,12 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 		target_origin,
 		Vector2.ONE * _settings.universe_sector_size
 	)
-	var accepted := _resolve_candidates(_procedural_candidates_near(coordinate, target_bounds))
+	var candidates := procedural_candidates_in_bounds(
+		target_bounds.grow(minimum_system_distance())
+	)
+	var accepted: Array = CollisionResolver.new(
+		minimum_system_distance()
+	).resolve(candidates, []).candidates
 	var systems := []
 	for candidate in accepted:
 		if not _inside_half_open(target_bounds, candidate.position):
@@ -71,50 +79,38 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 	return Sector.new(coordinate, systems, _settings.universe_generator_version)
 
 
-func _procedural_candidates_near(coordinate: SectorCoordinate, target_bounds: Rect2) -> Array:
+func procedural_candidates_in_bounds(bounds: Rect2) -> Array:
+	if identity == null or bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
+		return []
 	var result := []
-	var spacing: float = _settings.universe_minimum_system_distance
-	var sector_size: float = _settings.universe_sector_size
-	var owner_radius := ceili(spacing / sector_size)
-	var expanded := target_bounds.grow(spacing)
-	for y in range(-owner_radius, owner_radius + 1):
-		for x in range(-owner_radius, owner_radius + 1):
-			var owner: SectorCoordinate = coordinate.offset(x, y)
+	var size := sector_size()
+	var first_x := floori(bounds.position.x / size)
+	var first_y := floori(bounds.position.y / size)
+	var last_x := ceili(bounds.end.x / size) - 1
+	var last_y := ceili(bounds.end.y / size) - 1
+	for owner_y in range(first_y, last_y + 1):
+		for owner_x in range(first_x, last_x + 1):
+			var owner := SectorCoordinate.new(owner_x, owner_y)
 			for candidate in _candidate_generator.candidates_for_owner(owner):
-				if _inside_half_open(expanded, candidate.position):
+				if _inside_half_open(bounds, candidate.position):
 					result.append(candidate)
 	return result
 
 
-func _resolve_candidates(candidates: Array) -> Array:
-	var finite := candidates.filter(
-		func(candidate): return is_finite(candidate.position.x) and is_finite(candidate.position.y)
-	)
-	var accepted := []
-	for candidate in finite:
-		if _is_local_winner(candidate, finite):
-			accepted.append(candidate)
-	accepted.sort_custom(_candidate_precedes)
-	return accepted
+func sector_size() -> float:
+	return _settings.universe_sector_size
 
 
-func _is_local_winner(candidate, candidates: Array) -> bool:
-	var spacing: float = _settings.universe_minimum_system_distance
-	var minimum_squared := spacing * spacing
-	for other in candidates:
-		if other == candidate:
-			continue
-		if candidate.position.distance_squared_to(other.position) >= minimum_squared:
-			continue
-		if _candidate_precedes(other, candidate):
-			return false
-	return true
+func minimum_system_distance() -> float:
+	return _settings.universe_minimum_system_distance
 
 
-func _candidate_precedes(left, right) -> bool:
-	if left.priority != right.priority:
-		return left.priority < right.priority
-	return String(left.id) < String(right.id)
+func generator_version() -> int:
+	return _settings.universe_generator_version
+
+
+func default_visual_type() -> StringName:
+	return _settings.universe_visual_types[0]
 
 
 func _inside_half_open(bounds: Rect2, position: Vector2) -> bool:

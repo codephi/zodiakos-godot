@@ -36,6 +36,7 @@ func run() -> void:
 	_test_generator_emits_finite_local_procedural_systems()
 	_test_generator_resolves_global_spacing_across_sector_boundaries()
 	_test_generator_expands_owner_radius_for_large_spacing()
+	_test_generator_exposes_bounded_candidates_and_scalar_snapshot()
 	_test_generator_snapshots_mutable_configuration()
 	_test_generator_identity_and_output_are_versioned()
 	_test_generator_is_finite_outside_the_halo()
@@ -286,6 +287,33 @@ func _test_generator_expands_owner_radius_for_large_spacing() -> void:
 			forward_signatures[coordinate.key()],
 			"large-spacing output is request-order independent"
 		)
+
+
+func _test_generator_exposes_bounded_candidates_and_scalar_snapshot() -> void:
+	var mutable = Settings.duplicate(true)
+	var generator = Generator.new(FakeRepository.new(Metadata.new(1, 2, 3)), mutable, 101)
+	var bounds := Rect2(Vector2(-0.25, -0.25), Vector2(40.5, 40.5))
+	var first: Array = generator.procedural_candidates_in_bounds(bounds)
+	var second: Array = generator.procedural_candidates_in_bounds(bounds)
+	assert_equal(_candidate_signature(first), _candidate_signature(second), "bounded candidates stable")
+	for candidate in first:
+		assert_true(candidate.position.x >= bounds.position.x, "bounded candidate includes min x")
+		assert_true(candidate.position.y >= bounds.position.y, "bounded candidate includes min y")
+		assert_true(candidate.position.x < bounds.end.x, "bounded candidate excludes max x")
+		assert_true(candidate.position.y < bounds.end.y, "bounded candidate excludes max y")
+	assert_equal(generator.sector_size(), 40.0, "sector size exposes snapshot scalar")
+	assert_equal(generator.minimum_system_distance(), 1.5, "spacing exposes snapshot scalar")
+	assert_equal(generator.generator_version(), 1, "generator version exposes snapshot scalar")
+	assert_equal(generator.default_visual_type(), &"yellow", "default visual uses snapshot")
+
+	mutable.universe_sector_size = 100.0
+	mutable.universe_minimum_system_distance = 9.0
+	mutable.universe_generator_version = 99
+	mutable.universe_visual_types[0] = &"red"
+	assert_equal(generator.sector_size(), 40.0, "sector size is not live settings")
+	assert_equal(generator.minimum_system_distance(), 1.5, "spacing is not live settings")
+	assert_equal(generator.generator_version(), 1, "version is not live settings")
+	assert_equal(generator.default_visual_type(), &"yellow", "visual is not live settings")
 
 
 func _test_generator_snapshots_mutable_configuration() -> void:
