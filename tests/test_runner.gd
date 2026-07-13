@@ -4,6 +4,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/domain/universe/test_universe_coordinates.gd"),
 	preload("res://tests/domain/universe/test_generation_foundations.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),
+	preload("res://tests/application/projections/test_visible_sector_projection.gd"),
 	preload("res://tests/adapters/godot_view/test_map_camera_controller.gd"),
 	preload("res://tests/visuals/test_visual_palette.gd"),
 	preload("res://tests/visuals/test_geometric_components.gd"),
