@@ -13,6 +13,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/domain/universe/test_stellar_system_definition.gd"),
 	preload("res://tests/domain/universe/test_system_composition.gd"),
 	preload("res://tests/domain/universe/test_dynamic_naming_service.gd"),
+	preload("res://tests/domain/universe/test_procedural_system_factory.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),
 	preload("res://tests/application/universe/test_load_galaxy_sector.gd"),
 	preload("res://tests/application/projections/test_visible_sector_projection.gd"),

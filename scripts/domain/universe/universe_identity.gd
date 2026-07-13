@@ -6,6 +6,7 @@ var value: int:
 		return _value
 
 var _value: int
+var _configuration_snapshot: Dictionary
 
 
 func _init(
@@ -15,11 +16,13 @@ func _init(
 	configuration: Resource
 ) -> void:
 	assert(metadata != null, "Universe identity requires catalog metadata")
+	assert(configuration != null, "Universe identity requires configuration")
+	_configuration_snapshot = _take_configuration_snapshot(configuration)
 	var canonical := _canonical_value(
 		actual_seed,
 		generator_version,
 		metadata,
-		configuration
+		_configuration_snapshot
 	)
 	var context := HashingContext.new()
 	context.start(HashingContext.HASH_SHA256)
@@ -31,11 +34,15 @@ func _init(
 		_value = 1
 
 
+func configuration_snapshot() -> Dictionary:
+	return _configuration_snapshot.duplicate(true)
+
+
 func _canonical_value(
 	actual_seed: int,
 	generator_version: int,
 	metadata: CatalogMetadata,
-	settings: Resource
+	settings: Dictionary
 ) -> String:
 	var fields: Array[PackedStringArray] = [
 		_pair("actual_seed", str(actual_seed)),
@@ -82,6 +89,40 @@ func _canonical_value(
 	for field in fields:
 		encoded.append("%d:%s%d:%s" % [field[0].length(), field[0], field[1].length(), field[1]])
 	return "".join(encoded)
+
+
+func _take_configuration_snapshot(configuration: Resource) -> Dictionary:
+	return {
+		"galaxy_disk_radius_pc": float(configuration.galaxy_disk_radius_pc),
+		"galaxy_halo_radius_pc": float(configuration.galaxy_halo_radius_pc),
+		"galaxy_disk_scale_length_pc": float(configuration.galaxy_disk_scale_length_pc),
+		"galaxy_bulge_scale_radius_pc": float(configuration.galaxy_bulge_scale_radius_pc),
+		"galaxy_bar_half_length_pc": float(configuration.galaxy_bar_half_length_pc),
+		"galaxy_bar_axis_ratio": float(configuration.galaxy_bar_axis_ratio),
+		"galaxy_bar_angle_deg": float(configuration.galaxy_bar_angle_deg),
+		"galaxy_spiral_arm_count": int(configuration.galaxy_spiral_arm_count),
+		"galaxy_spiral_pitch_deg": float(configuration.galaxy_spiral_pitch_deg),
+		"galaxy_spiral_arm_width_pc": float(configuration.galaxy_spiral_arm_width_pc),
+		"galaxy_halo_weight": float(configuration.galaxy_halo_weight),
+		"galaxy_max_candidate_systems_per_sector": int(
+			configuration.galaxy_max_candidate_systems_per_sector
+		),
+		"universe_sector_size": float(configuration.universe_sector_size),
+		"universe_minimum_system_distance": float(
+			configuration.universe_minimum_system_distance
+		),
+		"universe_visual_types": configuration.universe_visual_types.duplicate(),
+		"universe_visual_type_weights": (
+			configuration.universe_visual_type_weights.duplicate()
+		),
+		"system_min_stars": int(configuration.system_min_stars),
+		"system_max_stars": int(configuration.system_max_stars),
+		"system_max_planets": int(configuration.system_max_planets),
+		"system_max_moons_per_planet": int(configuration.system_max_moons_per_planet),
+		"system_max_minor_bodies": int(configuration.system_max_minor_bodies),
+		"system_planet_types": configuration.system_planet_types.duplicate(),
+		"system_planet_type_weights": configuration.system_planet_type_weights.duplicate(),
+	}
 
 
 func _pair(key: String, field_value: String) -> PackedStringArray:
