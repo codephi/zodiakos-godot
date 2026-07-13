@@ -9,6 +9,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/adapters/persistence/test_production_catalog.gd"),
 	preload("res://tests/domain/universe/test_universe_coordinates.gd"),
 	preload("res://tests/domain/universe/test_generation_foundations.gd"),
+	preload("res://tests/domain/universe/test_stellar_system_definition.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),
 	preload("res://tests/application/projections/test_visible_sector_projection.gd"),
 	preload("res://tests/adapters/godot_view/test_map_camera_controller.gd"),

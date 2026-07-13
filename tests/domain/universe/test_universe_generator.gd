@@ -23,7 +23,7 @@ func run() -> void:
 		_signature(first) != _signature(
 			Generator.new(Settings.universe_global_seed + 1, Settings).generate_sector(coordinate)
 		),
-		"seed changes stars"
+		"seed changes systems"
 	)
 
 	_assert_region_rules(generator, Coordinate.new(0, 0))
@@ -39,27 +39,35 @@ func run() -> void:
 
 func _signature(sector) -> Array:
 	var result := []
-	for star in sector.stars:
-		result.append([String(star.id), star.local_position, String(star.visual_type), star.priority])
+	for system in sector.systems:
+		result.append(
+			[String(system.id), system.local_position, String(system.visual_type), system.priority]
+		)
 	return result
 
 
 func _assert_region_rules(generator, center) -> void:
-	var all_stars := []
+	var all_systems := []
 	var ids := {}
 	for offset_y in range(-1, 2):
 		for offset_x in range(-1, 2):
 			var sector = generator.generate_sector(center.offset(offset_x, offset_y))
-			assert_true(sector.stars.size() <= Settings.universe_max_stars_per_sector, "sector cap")
-			for star in sector.stars:
-				assert_true(not ids.has(star.id), "star id is unique")
-				ids[star.id] = true
-				assert_true(Settings.universe_visual_types.has(star.visual_type), "known visual type")
-				all_stars.append(star)
-	for index in all_stars.size():
-		for other_index in range(index + 1, all_stars.size()):
-			var left = all_stars[index]
-			var right = all_stars[other_index]
+			assert_true(
+				sector.systems.size() <= Settings.universe_max_stars_per_sector,
+				"sector cap"
+			)
+			for system in sector.systems:
+				assert_true(not ids.has(system.id), "system id is unique")
+				ids[system.id] = true
+				assert_true(
+					Settings.universe_visual_types.has(system.visual_type),
+					"known visual type"
+				)
+				all_systems.append(system)
+	for index in all_systems.size():
+		for other_index in range(index + 1, all_systems.size()):
+			var left = all_systems[index]
+			var right = all_systems[other_index]
 			var delta_sector := Vector2(
 				left.sector.x - right.sector.x,
 				left.sector.y - right.sector.y
@@ -145,9 +153,12 @@ func _assert_sample_contains_empty_sector_and_cross_border_cluster(generator) ->
 	for y in range(-20, 21):
 		for x in range(-20, 21):
 			var sector = generator.generate_sector(Coordinate.new(x, y))
-			found_empty = found_empty or sector.stars.is_empty()
-			for star in sector.stars:
-				if star.source == &"cluster" and star.owner_sector.key() != sector.coordinate.key():
+			found_empty = found_empty or sector.systems.is_empty()
+			for system in sector.systems:
+				if (
+					system.source == &"cluster"
+					and system.owner_sector.key() != sector.coordinate.key()
+				):
 					found_cross_border_cluster = true
 			if found_empty and found_cross_border_cluster:
 				break
@@ -170,5 +181,5 @@ func _assert_visual_type_distribution(generator) -> void:
 		assert_true(counts.get(visual_type, 0) > 0, "%s appears in type distribution" % visual_type)
 	assert_true(
 		counts[&"yellow"] > counts[&"blue"],
-		"common yellow stars outnumber rare blue stars in deterministic sample"
+		"common yellow systems outnumber rare blue systems in deterministic sample"
 	)

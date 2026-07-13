@@ -1,7 +1,7 @@
 class_name SectorStreamController
 extends Node
 
-signal stats_changed(active_sectors: int, visible_stars: int, center_key: String)
+signal stats_changed(active_sectors: int, visible_systems: int, center_key: String)
 
 const ProjectionScript = preload(
 	"res://scripts/application/projections/visible_sector_projection.gd"
@@ -87,7 +87,7 @@ func process_pending(limit = null) -> void:
 func _emit_stats() -> void:
 	if center == null:
 		return
-	var current_stats := [view.active_sector_count(), view.star_count(), center.key()]
+	var current_stats := [view.active_sector_count(), view.system_count(), center.key()]
 	if current_stats == _last_stats:
 		return
 	_last_stats = current_stats

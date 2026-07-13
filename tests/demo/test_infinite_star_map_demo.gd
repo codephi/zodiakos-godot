@@ -40,7 +40,7 @@ func _test_hud_reports_map_stats_and_zoom() -> void:
 	assert_true(stats.text.contains("Seed: 0x5A4F4449414B4F53"), "HUD shows fixed seed")
 	assert_true(stats.text.contains("Sector: 0:0"), "HUD shows center sector")
 	assert_true(stats.text.contains("Active: 0"), "HUD shows active sectors")
-	assert_true(stats.text.contains("Stars: 0"), "HUD shows visible stars")
+	assert_true(stats.text.contains("Systems: 0"), "HUD shows visible systems")
 	assert_true(stats.text.contains("Zoom: 50.0"), "HUD shows initial zoom")
 	camera.apply_zoom_steps(1)
 	assert_true(stats.text.contains("Zoom: 44.0"), "HUD refreshes after zoom")

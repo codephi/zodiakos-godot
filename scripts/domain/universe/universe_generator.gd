@@ -2,7 +2,7 @@ class_name UniverseGenerator
 extends RefCounted
 
 const Mixer = preload("res://scripts/domain/universe/seed_mixer.gd")
-const Star = preload("res://scripts/domain/universe/star_definition.gd")
+const System = preload("res://scripts/domain/universe/stellar_system_definition.gd")
 const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
 const DefaultSettings = preload("res://config/game_settings.tres")
 
@@ -29,12 +29,12 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 	var candidates := _generate_nearby_candidates(coordinate)
 	var accepted := _resolve_candidates(candidates)
 
-	var stars := []
+	var systems := []
 	for candidate in accepted:
 		if not _inside_target(candidate.position):
 			continue
-		stars.append(
-			Star.new(
+		systems.append(
+			System.new(
 				candidate.id,
 				coordinate.offset(0, 0),
 				candidate.position,
@@ -45,11 +45,11 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 				settings.universe_generator_version
 			)
 		)
-		if stars.size() == settings.universe_max_stars_per_sector:
+		if systems.size() == settings.universe_max_stars_per_sector:
 			break
 	return Sector.new(
 		coordinate.offset(0, 0),
-		stars,
+		systems,
 		settings.universe_generator_version
 	)
 
@@ -96,19 +96,19 @@ func _append_clusters(result: Array, owner, owner_origin: Vector2) -> void:
 		)
 		var axis_ratio := parameters.randf_range(0.65, 1.0)
 		var ellipse_rotation := parameters.randf_range(0.0, TAU)
-		var star_count := parameters.randi_range(
+		var system_count := parameters.randi_range(
 			settings.universe_min_cluster_stars,
 			settings.universe_max_cluster_stars
 		)
-		for star_index in star_count:
-			var star_rng := _indexed_rng(
+		for system_index in system_count:
+			var system_rng := _indexed_rng(
 				owner,
 				"cluster_star",
 				cluster_index,
-				star_index
+				system_index
 			)
-			var distance := radius * pow(star_rng.randf(), 1.8)
-			var point := Vector2.from_angle(star_rng.randf_range(0.0, TAU))
+			var distance := radius * pow(system_rng.randf(), 1.8)
+			var point := Vector2.from_angle(system_rng.randf_range(0.0, TAU))
 			point *= Vector2(distance, distance * axis_ratio)
 			_append_candidate(
 				result,
@@ -116,7 +116,7 @@ func _append_clusters(result: Array, owner, owner_origin: Vector2) -> void:
 				center + point.rotated(ellipse_rotation),
 				&"cluster",
 				cluster_index,
-				star_index
+				system_index
 			)
 
 
@@ -125,13 +125,13 @@ func _append_isolated(result: Array, owner, owner_origin: Vector2) -> void:
 		0,
 		settings.universe_max_isolated_stars
 	)
-	for star_index in count:
-		var star_rng := _indexed_rng(owner, "isolated_star", star_index)
+	for system_index in count:
+		var system_rng := _indexed_rng(owner, "isolated_star", system_index)
 		var point := owner_origin + Vector2(
-			star_rng.randf_range(0.0, settings.universe_sector_size),
-			star_rng.randf_range(0.0, settings.universe_sector_size)
+			system_rng.randf_range(0.0, settings.universe_sector_size),
+			system_rng.randf_range(0.0, settings.universe_sector_size)
 		)
-		_append_candidate(result, owner, point, &"isolated", -1, star_index)
+		_append_candidate(result, owner, point, &"isolated", -1, system_index)
 
 
 func _append_candidate(
@@ -140,13 +140,13 @@ func _append_candidate(
 	position: Vector2,
 	source: StringName,
 	cluster_index: int,
-	star_index: int
+	system_index: int
 ) -> void:
 	var prefix: String
 	if source == &"cluster":
-		prefix = "cluster:%d:%d:%d:%d" % [owner.x, owner.y, cluster_index, star_index]
+		prefix = "cluster:%d:%d:%d:%d" % [owner.x, owner.y, cluster_index, system_index]
 	else:
-		prefix = "isolated:%d:%d:%d" % [owner.x, owner.y, star_index]
+		prefix = "isolated:%d:%d:%d" % [owner.x, owner.y, system_index]
 
 	var candidate := Candidate.new()
 	candidate.id = StringName(prefix)

@@ -6,7 +6,9 @@ const PositionType = preload("res://scripts/domain/universe/universe_position.gd
 const View = preload("res://scripts/adapters/godot_view/star_field_view.gd")
 const Controller = preload("res://scripts/adapters/godot_view/sector_stream_controller.gd")
 const StarVisualType = preload("res://scripts/visuals/star_visual.gd")
-const StarDefinitionType = preload("res://scripts/domain/universe/star_definition.gd")
+const StellarSystemDefinitionType = preload(
+	"res://scripts/domain/universe/stellar_system_definition.gd"
+)
 const UniverseSectorType = preload("res://scripts/domain/universe/universe_sector.gd")
 const Settings = preload("res://config/game_settings.tres")
 
@@ -52,8 +54,8 @@ class TrackingView extends RefCounted:
 		return delegate.active_sector_count()
 
 
-	func star_count() -> int:
-		return delegate.star_count()
+	func system_count() -> int:
+		return delegate.system_count()
 
 
 	func free_delegate() -> void:
@@ -86,7 +88,7 @@ func _test_bounded_streaming_and_deterministic_rematerialization() -> void:
 	assert_equal(view.active_sector_count(), 2, "default batch loads at most two sectors")
 	controller.process_pending(100)
 	assert_equal(view.active_sector_count(), 25, "load radius creates 25 sectors")
-	assert_true(view.star_count() > 0, "stars are materialized")
+	assert_true(view.system_count() > 0, "systems are materialized")
 	var original_signature = view.sector_signature(Coordinate.new())
 	controller.update_center(PositionType.new(Coordinate.new(10, 0), Vector2.ZERO))
 	controller.process_pending(100)
@@ -97,7 +99,7 @@ func _test_bounded_streaming_and_deterministic_rematerialization() -> void:
 	assert_equal(
 		view.sector_signature(Coordinate.new()),
 		original_signature,
-		"return rematerializes same stars"
+		"return rematerializes same systems"
 	)
 	controller.free()
 	view.free()
@@ -139,12 +141,12 @@ func _test_sector_placement_preserves_integer_precision() -> void:
 func _test_unload_does_not_mutate_sector() -> void:
 	var coordinate = Coordinate.new(3, -4)
 	var sector = Generator.new().generate_sector(coordinate)
-	var signature_before: Array = sector.stars.map(func(star): return String(star.id))
+	var signature_before: Array = sector.systems.map(func(system): return String(system.id))
 	var view = View.new()
 	view.materialize_sector(sector, coordinate)
 	view.remove_sector(coordinate)
 	assert_equal(
-		sector.stars.map(func(star): return String(star.id)),
+		sector.systems.map(func(system): return String(system.id)),
 		signature_before,
 		"unload leaves UniverseSector contents unchanged"
 	)
@@ -178,7 +180,7 @@ func _test_stats_emit_only_when_observable_state_changes() -> void:
 	var view = View.new()
 	var controller = Controller.new()
 	var emissions := [0]
-	controller.stats_changed.connect(func(_sectors, _stars, _center): emissions[0] += 1)
+	controller.stats_changed.connect(func(_sectors, _systems, _center): emissions[0] += 1)
 	controller.configure(
 		Generator.new(),
 		view,
@@ -363,7 +365,7 @@ func _test_extreme_positive_viewport_is_safely_bounded() -> void:
 
 func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
 	var coordinate = Coordinate.new()
-	var invalid_visual_star = StarDefinitionType.new(
+	var invalid_visual_system = StellarSystemDefinitionType.new(
 		&"invalid_visual",
 		coordinate,
 		Vector2(4.0, 6.0),
@@ -372,7 +374,7 @@ func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
 		coordinate,
 		1
 	)
-	var yellow_star = StarDefinitionType.new(
+	var yellow_system = StellarSystemDefinitionType.new(
 		&"yellow_visual",
 		coordinate,
 		Vector2(8.0, 6.0),
@@ -383,10 +385,11 @@ func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
 	)
 	var view = View.new()
 	view.materialize_sector(
-		UniverseSectorType.new(coordinate, [invalid_visual_star, yellow_star]),
+		UniverseSectorType.new(coordinate, [invalid_visual_system, yellow_system]),
 		coordinate
 	)
 	var visual = view.get_node("Sector_0_0/invalid_visual")
+	assert_equal(visual.get_meta("system_id"), &"invalid_visual", "visual stores system id")
 	assert_true(visual.get_node("Body").mesh != null, "invalid visual type uses a safe mesh")
 	assert_true(
 		visual.get_node("Body").material_override != null,

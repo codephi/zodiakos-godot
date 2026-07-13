@@ -23,10 +23,10 @@ func materialize_sector(sector, origin) -> void:
 	var container := Node3D.new()
 	container.name = "Sector_%d_%d" % [coordinate.x, coordinate.y]
 	add_child(container)
-	for definition in sector.stars:
+	for definition in sector.systems:
 		var visual := StarVisualType.new(settings)
 		visual.name = String(definition.id)
-		visual.set_meta("star_id", definition.id)
+		visual.set_meta("system_id", definition.id)
 		visual.position = Vector3(
 			definition.local_position.x,
 			0.0,
@@ -83,17 +83,17 @@ func active_sector_count() -> int:
 	return active.size()
 
 
-func star_count() -> int:
+func system_count() -> int:
 	var total := 0
 	for entry in active.values():
-		total += entry.sector.stars.size()
+		total += entry.sector.system_count()
 	return total
 
 
 func sector_signature(coordinate) -> Array:
 	var result := []
-	for star in active[coordinate.key()].sector.stars:
-		result.append(String(star.id))
+	for system in active[coordinate.key()].sector.systems:
+		result.append(String(system.id))
 	return result
 
 

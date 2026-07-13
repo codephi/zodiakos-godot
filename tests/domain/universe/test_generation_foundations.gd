@@ -2,7 +2,7 @@ extends "res://tests/test_case.gd"
 
 const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
 const Mixer = preload("res://scripts/domain/universe/seed_mixer.gd")
-const Star = preload("res://scripts/domain/universe/star_definition.gd")
+const System = preload("res://scripts/domain/universe/stellar_system_definition.gd")
 const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
 const PositionType = preload("res://scripts/domain/universe/universe_position.gd")
 const Settings = preload("res://config/game_settings.tres")
@@ -28,33 +28,37 @@ func run() -> void:
 	)
 
 	var version: int = Settings.universe_generator_version
-	var star = Star.new(&"b", coordinate, Vector2(2, 3), &"yellow", &"cluster", coordinate, 10, version)
-	var star_a = Star.new(&"a", coordinate, Vector2(1, 1), &"red", &"isolated", coordinate, 9, version)
-	var stars := [star, star_a]
-	var sector = Sector.new(coordinate, stars, version)
-	assert_equal(sector.stars[0].id, &"a", "sector sorts stars by id")
-	stars.clear()
-	assert_equal(sector.stars.size(), 2, "sector copies its source star array")
-	var leaked_copy: Array = sector.stars
+	var system = System.new(
+		&"b", coordinate, Vector2(2, 3), &"yellow", &"cluster", coordinate, 10, version
+	)
+	var system_a = System.new(
+		&"a", coordinate, Vector2(1, 1), &"red", &"isolated", coordinate, 9, version
+	)
+	var systems := [system, system_a]
+	var sector = Sector.new(coordinate, systems, version)
+	assert_equal(sector.systems[0].id, &"a", "sector sorts systems by id")
+	systems.clear()
+	assert_equal(sector.systems.size(), 2, "sector copies its source system array")
+	var leaked_copy: Array = sector.systems
 	leaked_copy.clear()
-	assert_equal(sector.stars.size(), 2, "sector does not expose mutable star array")
+	assert_equal(sector.systems.size(), 2, "sector does not expose mutable system array")
 
 	coordinate.x = 100
 	coordinate.y = 200
 	assert_equal(sector.coordinate.key(), "-7:9", "sector copies its source coordinate")
-	assert_equal(star.sector.key(), "-7:9", "star copies its source sector")
-	assert_equal(star.owner_sector.key(), "-7:9", "star copies its source owner sector")
+	assert_equal(system.sector.key(), "-7:9", "system copies its source sector")
+	assert_equal(system.owner_sector.key(), "-7:9", "system copies its source owner sector")
 	var leaked_sector = sector.coordinate
 	leaked_sector.x = 300
-	var leaked_star_sector = star.sector
-	leaked_star_sector.y = 400
-	var leaked_owner_sector = star.owner_sector
+	var leaked_system_sector = system.sector
+	leaked_system_sector.y = 400
+	var leaked_owner_sector = system.owner_sector
 	leaked_owner_sector.x = 500
 	assert_equal(sector.coordinate.key(), "-7:9", "sector does not expose mutable coordinate")
-	assert_equal(star.sector.key(), "-7:9", "star does not expose mutable sector")
-	assert_equal(star.owner_sector.key(), "-7:9", "star does not expose mutable owner sector")
+	assert_equal(system.sector.key(), "-7:9", "system does not expose mutable sector")
+	assert_equal(system.owner_sector.key(), "-7:9", "system does not expose mutable owner sector")
 
-	assert_equal(star.generator_version, version, "star generator version")
+	assert_equal(system.generator_version, version, "system generator version")
 	assert_equal(sector.generator_version, version, "sector generator version")
 	assert_equal(Settings.universe_sector_size, 40.0, "sector size")
 	assert_equal(Settings.universe_generator_version, 1, "generator version")

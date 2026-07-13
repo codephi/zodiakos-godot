@@ -65,10 +65,10 @@ func _add_hud() -> void:
 	layer.add_child(stats_label)
 
 
-func _update_stats(sectors: int, stars: int, center_key: String) -> void:
+func _update_stats(sectors: int, systems: int, center_key: String) -> void:
 	stats_label.text = (
-		"Seed: 0x%X\nSector: %s\nActive: %d\nStars: %d\nZoom: %.1f"
-		% [Settings.universe_global_seed, center_key, sectors, stars, map_camera.size]
+		"Seed: 0x%X\nSector: %s\nActive: %d\nSystems: %d\nZoom: %.1f"
+		% [Settings.universe_global_seed, center_key, sectors, systems, map_camera.size]
 	)
 
 
@@ -76,7 +76,7 @@ func _on_zoom_changed(_new_size: float) -> void:
 	_refresh_stream_coverage()
 	_update_stats(
 		sector_view.active_sector_count(),
-		sector_view.star_count(),
+		sector_view.system_count(),
 		map_camera.logical_position.sector.key()
 	)
 

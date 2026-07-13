@@ -1,4 +1,4 @@
-class_name StarDefinition
+class_name StellarSystemDefinition
 extends RefCounted
 
 const SectorCoordinateType = preload("res://scripts/domain/universe/sector_coordinate.gd")
@@ -28,6 +28,9 @@ var priority: int:
 var generator_version: int:
 	get:
 		return _generator_version
+var galactocentric_z_pc: float:
+	get:
+		return _galactocentric_z_pc
 
 var _id: StringName
 var _sector: SectorCoordinateType
@@ -37,23 +40,26 @@ var _source: StringName
 var _owner_sector: SectorCoordinateType
 var _priority: int
 var _generator_version: int
+var _galactocentric_z_pc: float
 
 
 func _init(
-	star_id: StringName,
-	star_sector: SectorCoordinateType,
+	system_id: StringName,
+	system_sector: SectorCoordinateType,
 	position: Vector2,
 	type: StringName,
-	star_source: StringName,
+	system_source: StringName,
 	owner: SectorCoordinateType,
-	star_priority: int,
-	version: int = DefaultSettings.universe_generator_version
+	system_priority: int,
+	version: int = DefaultSettings.universe_generator_version,
+	z_pc: float = 0.0
 ) -> void:
-	_id = star_id
-	_sector = star_sector.offset(0, 0)
+	_id = system_id
+	_sector = system_sector.offset(0, 0)
 	_local_position = position
 	_visual_type = type
-	_source = star_source
+	_source = system_source
 	_owner_sector = owner.offset(0, 0)
-	_priority = star_priority
+	_priority = system_priority
 	_generator_version = version
+	_galactocentric_z_pc = z_pc
