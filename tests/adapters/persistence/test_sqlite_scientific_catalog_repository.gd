@@ -29,21 +29,33 @@ func _test_reads_metadata_and_bounded_systems_from_a_read_only_copy() -> void:
 	var anchors: Array[Anchor] = repository.systems_in_bounds(
 		Rect2(8100.0, -50.0, 100.0, 100.0)
 	)
-	assert_equal(anchors.size(), 1, "bounded query excludes its final x edge")
-	if anchors.size() == 1:
-		assert_equal(anchors[0].id, &"catalog:fixture", "anchor id is mapped")
+	var anchors_by_id := {}
+	for anchor: Anchor in anchors:
+		anchors_by_id[anchor.id] = anchor
+	assert_true(anchors_by_id.has(&"catalog:fixture"), "fixture anchor is returned")
+	assert_true(
+		not anchors_by_id.has(&"catalog:fixture-boundary"),
+		"bounded query excludes its final x edge"
+	)
+	var fixture_anchor: Anchor = anchors_by_id.get(&"catalog:fixture") as Anchor
+	if fixture_anchor != null:
+		assert_equal(fixture_anchor.id, &"catalog:fixture", "anchor id is mapped")
 		assert_equal(
-			anchors[0].canonical_designation,
+			fixture_anchor.canonical_designation,
 			"Fixture System",
 			"anchor designation is mapped"
 		)
-		assert_equal(anchors[0].proper_name, "Fixture", "anchor proper name is mapped")
+		assert_equal(fixture_anchor.proper_name, "Fixture", "anchor proper name is mapped")
 		assert_equal(
-			anchors[0].galactocentric_position,
+			fixture_anchor.galactocentric_position,
 			Vector3(8150.0, 0.0, 20.8),
 			"anchor position is mapped"
 		)
-		assert_equal(anchors[0].map_position(), Vector2(8150.0, 0.0), "map position is derived")
+		assert_equal(
+			fixture_anchor.map_position(),
+			Vector2(8150.0, 0.0),
+			"map position is derived"
+		)
 
 	var database = repository.get("_database")
 	assert_true(database != null and database.read_only, "repository connection is read-only")

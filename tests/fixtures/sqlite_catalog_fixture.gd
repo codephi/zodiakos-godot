@@ -16,6 +16,7 @@ func prepare() -> bool:
 	var source_path := ProjectSettings.globalize_path(PRODUCTION_DATABASE_PATH)
 	var destination_path := ProjectSettings.globalize_path(path)
 	if DirAccess.copy_absolute(source_path, destination_path) != OK:
+		cleanup()
 		return false
 
 	var database = SQLite.new()
@@ -24,34 +25,37 @@ func prepare() -> bool:
 	database.foreign_keys = true
 	database.verbosity_level = 0
 	if not database.open_db():
+		database.close_db()
 		cleanup()
 		return false
 
-	var inserted := database.query("BEGIN TRANSACTION")
-	if inserted:
-		inserted = _insert_system(
+	var transaction_started := database.query("BEGIN TRANSACTION")
+	var writes_succeeded := transaction_started
+	if writes_succeeded:
+		writes_succeeded = _insert_system(
 			database,
 			"catalog:fixture",
 			"Fixture System",
 			"Fixture",
 			Vector3(8150.0, 0.0, 20.8)
 		)
-	if inserted:
-		inserted = _insert_system(
+	if writes_succeeded:
+		writes_succeeded = _insert_system(
 			database,
 			"catalog:fixture-boundary",
 			"Fixture Boundary System",
 			"Boundary",
 			Vector3(8200.0, 0.0, 0.0)
 		)
-	if inserted:
-		inserted = database.query("COMMIT")
-	else:
+	var committed := false
+	if writes_succeeded:
+		committed = database.query("COMMIT")
+	if transaction_started and not committed:
 		database.query("ROLLBACK")
 	database.close_db()
-	if not inserted:
+	if not committed:
 		cleanup()
-	return inserted
+	return committed
 
 
 func cleanup() -> void:
