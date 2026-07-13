@@ -59,6 +59,7 @@ func _test_repository_port_exposes_typed_domain_results() -> void:
 		methods_by_name[method.name] = method
 	var metadata_return: Dictionary = methods_by_name.metadata.return
 	var systems_return: Dictionary = methods_by_name.systems_in_bounds.return
+	var validation_return: Dictionary = methods_by_name.technical_validation_errors.return
 	assert_equal(metadata_return.type, TYPE_OBJECT, "metadata return is an object contract")
 	assert_equal(
 		metadata_return.class_name,
@@ -71,7 +72,15 @@ func _test_repository_port_exposes_typed_domain_results() -> void:
 		"SystemAnchor",
 		"systems array names the anchor domain record"
 	)
+	assert_equal(validation_return.type, TYPE_ARRAY, "validation findings use an array contract")
+	assert_equal(
+		validation_return.hint_string,
+		"Dictionary",
+		"validation findings are structured dictionaries"
+	)
 	var catalog_metadata: Metadata = repository.metadata()
 	var anchors: Array[Anchor] = repository.systems_in_bounds(Rect2())
+	var findings: Array[Dictionary] = repository.technical_validation_errors()
 	assert_equal(catalog_metadata, null, "typed metadata remains empty in the base port")
 	assert_true(anchors.is_empty(), "typed anchor result remains empty in the base port")
+	assert_true(findings.is_empty(), "typed validation result remains empty in the base port")

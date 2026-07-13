@@ -22,5 +22,6 @@ func systems_in_bounds(_bounds: Rect2) -> Array[SystemAnchorType]:
 	return systems
 
 
-func technical_validation_errors() -> PackedStringArray:
-	return PackedStringArray()
+func technical_validation_errors() -> Array[Dictionary]:
+	var findings: Array[Dictionary] = []
+	return findings
