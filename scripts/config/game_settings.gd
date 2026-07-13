@@ -195,9 +195,10 @@ func _validate_system_composition(errors: PackedStringArray) -> void:
 	if system_planet_types.size() != system_planet_type_weights.size():
 		errors.append("system planet types and weights must have matching sizes")
 	var seen_types := {}
+	var has_duplicate_type := false
 	for planet_type in system_planet_types:
 		if seen_types.has(planet_type):
-			errors.append("system_planet_types must contain unique values")
+			has_duplicate_type = true
 			continue
 		seen_types[planet_type] = true
 		if not SUPPORTED_PLANET_TYPES.has(planet_type):
@@ -209,9 +210,14 @@ func _validate_system_composition(errors: PackedStringArray) -> void:
 			errors.append(
 				"system_planet_types has no planet_styles entry: %s" % planet_type
 			)
+	if has_duplicate_type:
+		errors.append("system_planet_types must contain unique values")
+	var has_nonpositive_weight := false
 	for weight in system_planet_type_weights:
 		if weight <= 0:
-			errors.append("system_planet_type_weights must contain positive values")
+			has_nonpositive_weight = true
+	if has_nonpositive_weight:
+		errors.append("system_planet_type_weights must contain positive values")
 
 
 func _validate_visuals(errors: PackedStringArray) -> void:

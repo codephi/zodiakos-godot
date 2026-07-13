@@ -188,6 +188,25 @@ func run() -> void:
 		"system_planet_type_weights must contain positive values"
 	)
 
+	var repeated_aggregate_errors = Settings.duplicate(true)
+	var repeated_types: Array[StringName] = [&"rocky", &"rocky", &"rocky"]
+	var invalid_weights: Array[int] = [0, -1, 1]
+	repeated_aggregate_errors.system_planet_types = repeated_types
+	repeated_aggregate_errors.system_planet_type_weights = invalid_weights
+	var aggregate_errors: PackedStringArray = repeated_aggregate_errors.validation_errors()
+	assert_equal(
+		aggregate_errors.count("system_planet_types must contain unique values"),
+		1,
+		"duplicate type diagnostic appears once"
+	)
+	assert_equal(
+		aggregate_errors.count(
+			"system_planet_type_weights must contain positive values"
+		),
+		1,
+		"invalid weight diagnostic appears once"
+	)
+
 	var missing_enabled_style = Settings.duplicate(true)
 	missing_enabled_style.planet_styles.erase(&"gas")
 	assert_true(
