@@ -19,15 +19,29 @@ $extensionList = Join-Path $projectRoot '.godot\extension_list.cfg'
 $sqliteExtension = 'res://addons/godot-sqlite/gdsqlite.gdextension'
 $existingExtension = 'res://addons/existing/example.gdextension'
 
-function Assert-SafeSandboxPath([string]$Candidate) {
+function Assert-SafeSandboxTree([string]$Candidate, [string]$ExpectedPrefix) {
     $canonicalCandidate = [System.IO.Path]::GetFullPath($Candidate)
     $candidateParent = [System.IO.Path]::GetDirectoryName($canonicalCandidate).TrimEnd('\')
     $candidateName = [System.IO.Path]::GetFileName($canonicalCandidate)
     if (-not $candidateParent.Equals($temporaryRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Sandbox is outside TEMP: $canonicalCandidate"
     }
-    if (-not $candidateName.StartsWith('zodiakos-sqlite-distribution-', [System.StringComparison]::Ordinal)) {
+    if (-not $candidateName.StartsWith($ExpectedPrefix, [System.StringComparison]::Ordinal)) {
         throw "Sandbox has an unexpected name: $canonicalCandidate"
+    }
+
+    foreach ($componentPath in @($temporaryRoot, $canonicalCandidate)) {
+        if (-not (Test-Path -LiteralPath $componentPath)) {
+            continue
+        }
+        $resolvedComponent = (Resolve-Path -LiteralPath $componentPath).Path
+        if (-not $resolvedComponent.Equals($componentPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Sandbox component resolved to an unexpected path: $resolvedComponent"
+        }
+        $componentItem = Get-Item -LiteralPath $componentPath -Force
+        if (($componentItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Sandbox component cannot be a reparse point: $componentPath"
+        }
     }
     return $canonicalCandidate
 }
@@ -105,6 +119,8 @@ try {
 
     Write-Output 'INSTALLER DISTRIBUTION TESTS PASSED'
 } finally {
-    $sandboxRoot = Assert-SafeSandboxPath $sandboxRoot
-    Remove-Item -LiteralPath $sandboxRoot -Recurse -Force -ErrorAction SilentlyContinue
+    $sandboxRoot = Assert-SafeSandboxTree $sandboxRoot 'zodiakos-sqlite-distribution-'
+    if (Test-Path -LiteralPath $sandboxRoot) {
+        Remove-Item -LiteralPath $sandboxRoot -Recurse -Force
+    }
 }
