@@ -35,6 +35,8 @@ func run() -> void:
 	_test_generator_reads_metadata_once_and_is_request_order_independent()
 	_test_generator_emits_finite_local_procedural_systems()
 	_test_generator_resolves_global_spacing_across_sector_boundaries()
+	_test_generator_expands_owner_radius_for_large_spacing()
+	_test_generator_snapshots_mutable_configuration()
 	_test_generator_identity_and_output_are_versioned()
 	_test_generator_is_finite_outside_the_halo()
 
@@ -258,6 +260,65 @@ func _test_generator_resolves_global_spacing_across_sector_boundaries() -> void:
 			)
 
 
+func _test_generator_expands_owner_radius_for_large_spacing() -> void:
+	var custom = Settings.duplicate(true)
+	custom.universe_minimum_system_distance = custom.universe_sector_size * 2.5
+	var coordinates := []
+	for y in range(-4, 5):
+		for x in range(-4, 5):
+			coordinates.append(Coordinate.new(x, y))
+	var forward = Generator.new(FakeRepository.new(Metadata.new(1, 2, 3)), custom, 101)
+	var forward_signatures := {}
+	var systems := []
+	for coordinate in coordinates:
+		var sector = forward.generate_sector(coordinate)
+		forward_signatures[coordinate.key()] = _sector_signature(sector)
+		for system in sector.systems:
+			systems.append(system)
+	assert_true(systems.size() > 1, "large-spacing sample contains multiple systems")
+	_assert_global_spacing(systems, custom.universe_sector_size, custom.universe_minimum_system_distance)
+
+	var reverse = Generator.new(FakeRepository.new(Metadata.new(1, 2, 3)), custom, 101)
+	coordinates.reverse()
+	for coordinate in coordinates:
+		assert_equal(
+			_sector_signature(reverse.generate_sector(coordinate)),
+			forward_signatures[coordinate.key()],
+			"large-spacing output is request-order independent"
+		)
+
+
+func _test_generator_snapshots_mutable_configuration() -> void:
+	var mutable = Settings.duplicate(true)
+	var generator = Generator.new(FakeRepository.new(Metadata.new(1, 2, 3)), mutable, 101)
+	var coordinate = Coordinate.new(0, 0)
+	var identity_before: int = generator.identity.value
+	var output_before := _sector_signature(generator.generate_sector(coordinate))
+
+	mutable.universe_generator_version += 10
+	mutable.universe_sector_size *= 2.0
+	mutable.universe_minimum_system_distance *= 3.0
+	mutable.galaxy_disk_scale_length_pc *= 0.5
+	mutable.galaxy_max_candidate_systems_per_sector = 1
+	mutable.universe_visual_types[0] = &"blue"
+	mutable.universe_visual_type_weights[0] = 1
+	var changed_types: Array[StringName] = [&"blue"]
+	var changed_weights: Array[int] = [1]
+	mutable.universe_visual_types = changed_types
+	mutable.universe_visual_type_weights = changed_weights
+
+	assert_equal(generator.identity.value, identity_before, "identity uses construction snapshot")
+	assert_equal(
+		_sector_signature(generator.generate_sector(coordinate)),
+		output_before,
+		"generation remains bound to the same settings snapshot"
+	)
+	var public_properties := generator.get_property_list().map(
+		func(property: Dictionary): return property["name"]
+	)
+	assert_true(not public_properties.has(&"settings"), "mutable settings snapshot is encapsulated")
+
+
 func _test_generator_identity_and_output_are_versioned() -> void:
 	var base = Generator.new(FakeRepository.new(Metadata.new(1, 2, 3)), Settings, 101)
 	var changed_seed = Generator.new(FakeRepository.new(Metadata.new(1, 2, 3)), Settings, 102)
@@ -303,3 +364,20 @@ func _sector_signature(sector) -> Array:
 			]
 		)
 	return result
+
+
+func _assert_global_spacing(systems: Array, sector_size: float, minimum_distance: float) -> void:
+	for index in systems.size():
+		for other_index in range(index + 1, systems.size()):
+			var left = systems[index]
+			var right = systems[other_index]
+			var left_global: Vector2 = (
+				Vector2(left.sector.x, left.sector.y) * sector_size + left.local_position
+			)
+			var right_global: Vector2 = (
+				Vector2(right.sector.x, right.sector.y) * sector_size + right.local_position
+			)
+			assert_true(
+				left_global.distance_to(right_global) >= minimum_distance - 0.0001,
+				"large-spacing systems respect global separation"
+			)

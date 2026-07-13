@@ -11,9 +11,9 @@ const Sector = preload("res://scripts/domain/universe/universe_sector.gd")
 const DefaultSettings = preload("res://config/game_settings.tres")
 
 var identity: UniverseIdentity
-var settings: Resource
 var metadata: CatalogMetadata
 
+var _settings: Resource
 var _density_model: GalacticDensityModel
 var _candidate_generator
 
@@ -23,24 +23,24 @@ func _init(
 	configuration: Resource = DefaultSettings,
 	seed = null
 ) -> void:
-	settings = configuration
+	_settings = configuration.duplicate(true)
 	metadata = catalog_repository.metadata()
 	if metadata == null:
 		push_error("Universe generator requires valid catalog metadata")
 		return
-	var actual_seed: int = settings.universe_global_seed if seed == null else int(seed)
+	var actual_seed: int = _settings.universe_global_seed if seed == null else int(seed)
 	identity = Identity.new(
 		actual_seed,
-		settings.universe_generator_version,
+		_settings.universe_generator_version,
 		metadata,
-		settings
+		_settings
 	)
-	_density_model = DensityModel.new(settings)
+	_density_model = DensityModel.new(_settings)
 	_candidate_generator = CandidateGenerator.new(
 		identity,
 		_density_model,
 		metadata,
-		settings
+		_settings
 	)
 
 
@@ -48,7 +48,7 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 	var target_origin := _sector_origin(coordinate)
 	var target_bounds := Rect2(
 		target_origin,
-		Vector2.ONE * settings.universe_sector_size
+		Vector2.ONE * _settings.universe_sector_size
 	)
 	var accepted := _resolve_candidates(_procedural_candidates_near(coordinate, target_bounds))
 	var systems := []
@@ -64,19 +64,21 @@ func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 				candidate.source,
 				candidate.owner,
 				candidate.priority,
-				settings.universe_generator_version,
+				_settings.universe_generator_version,
 				0.0
 			)
 		)
-	return Sector.new(coordinate, systems, settings.universe_generator_version)
+	return Sector.new(coordinate, systems, _settings.universe_generator_version)
 
 
 func _procedural_candidates_near(coordinate: SectorCoordinate, target_bounds: Rect2) -> Array:
 	var result := []
-	var spacing: float = settings.universe_minimum_system_distance
+	var spacing: float = _settings.universe_minimum_system_distance
+	var sector_size: float = _settings.universe_sector_size
+	var owner_radius := ceili(spacing / sector_size)
 	var expanded := target_bounds.grow(spacing)
-	for y in range(-1, 2):
-		for x in range(-1, 2):
+	for y in range(-owner_radius, owner_radius + 1):
+		for x in range(-owner_radius, owner_radius + 1):
 			var owner: SectorCoordinate = coordinate.offset(x, y)
 			for candidate in _candidate_generator.candidates_for_owner(owner):
 				if _inside_half_open(expanded, candidate.position):
@@ -97,7 +99,7 @@ func _resolve_candidates(candidates: Array) -> Array:
 
 
 func _is_local_winner(candidate, candidates: Array) -> bool:
-	var spacing: float = settings.universe_minimum_system_distance
+	var spacing: float = _settings.universe_minimum_system_distance
 	var minimum_squared := spacing * spacing
 	for other in candidates:
 		if other == candidate:
@@ -125,4 +127,4 @@ func _inside_half_open(bounds: Rect2, position: Vector2) -> bool:
 
 
 func _sector_origin(coordinate: SectorCoordinate) -> Vector2:
-	return Vector2(coordinate.x, coordinate.y) * settings.universe_sector_size
+	return Vector2(coordinate.x, coordinate.y) * _settings.universe_sector_size

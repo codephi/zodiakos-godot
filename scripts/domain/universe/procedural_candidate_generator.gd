@@ -34,7 +34,7 @@ class Candidate:
 var identity: UniverseIdentity
 var density_model: GalacticDensityModel
 var metadata: CatalogMetadata
-var settings: Resource
+var _settings: Resource
 
 
 func _init(
@@ -46,15 +46,15 @@ func _init(
 	identity = universe_identity
 	density_model = galaxy_density
 	metadata = catalog_metadata
-	settings = configuration
+	_settings = configuration
 
 
 func candidates_for_owner(owner: SectorCoordinate) -> Array:
-	var sector_size: float = settings.universe_sector_size
+	var sector_size: float = _settings.universe_sector_size
 	var origin: Vector2 = Vector2(owner.x, owner.y) * sector_size
 	var center: Vector2 = origin + Vector2.ONE * sector_size * 0.5
 	var raw_count: float = (
-		density_model.density_at(center) * settings.galaxy_max_candidate_systems_per_sector
+		density_model.density_at(center) * _settings.galaxy_max_candidate_systems_per_sector
 	)
 	var count := floori(raw_count)
 	if _rng(owner, "candidate_count").randf() < raw_count - float(count):
@@ -65,7 +65,7 @@ func candidates_for_owner(owner: SectorCoordinate) -> Array:
 		var candidate_id := StringName(
 			"proc:%d:%d:%d:%d:%d"
 			% [
-				settings.universe_generator_version,
+				_settings.universe_generator_version,
 				metadata.catalog_version,
 				owner.x,
 				owner.y,
@@ -92,15 +92,15 @@ func candidates_for_owner(owner: SectorCoordinate) -> Array:
 func _visual_type(owner: SectorCoordinate, candidate_id: StringName) -> StringName:
 	var rng := _rng(owner, "visual:%s" % candidate_id)
 	var total_weight := 0
-	for weight: int in settings.universe_visual_type_weights:
+	for weight: int in _settings.universe_visual_type_weights:
 		total_weight += weight
 	var roll := rng.randi_range(0, total_weight - 1)
 	var cumulative_weight := 0
-	for index in settings.universe_visual_types.size():
-		cumulative_weight += settings.universe_visual_type_weights[index]
+	for index in _settings.universe_visual_types.size():
+		cumulative_weight += _settings.universe_visual_type_weights[index]
 		if roll < cumulative_weight:
-			return settings.universe_visual_types[index]
-	return settings.universe_visual_types.back()
+			return _settings.universe_visual_types[index]
+	return _settings.universe_visual_types.back()
 
 
 func _rng(owner: SectorCoordinate, tag: String) -> RandomNumberGenerator:
