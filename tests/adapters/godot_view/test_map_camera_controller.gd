@@ -6,6 +6,9 @@ const CameraController = preload("res://scripts/adapters/godot_view/map_camera_c
 func run() -> void:
 	_test_drag_threshold_and_floating_position()
 	_test_zoom_clamps_and_signal()
+	_test_zoom_anchors_to_current_cursor()
+	_test_zoom_uses_each_scroll_events_current_cursor()
+	_test_zoom_limits_and_invalid_viewport_do_not_move_camera()
 
 
 func _test_drag_threshold_and_floating_position() -> void:
@@ -46,4 +49,46 @@ func _test_zoom_clamps_and_signal() -> void:
 	camera.apply_zoom_steps(-200)
 	assert_equal(camera.size, camera.MAXIMUM_SIZE, "zoom out clamps exactly to the maximum")
 	assert_equal(changed_sizes, [camera.MINIMUM_SIZE, camera.MAXIMUM_SIZE], "each zoom command emits the clamped size")
+	camera.free()
+
+
+func _test_zoom_anchors_to_current_cursor() -> void:
+	var camera = CameraController.new()
+	var positions: Array = []
+	camera.logical_position_changed.connect(func(position): positions.append(position))
+
+	camera.apply_zoom_at(1, Vector2(750.0, 250.0), Vector2(1000.0, 500.0))
+	assert_true(is_equal_approx(camera.size, 44.0), "zoom in keeps the existing factor")
+	assert_true(camera.logical_position.local.is_equal_approx(Vector2(3.0, 0.0)), "zoom in moves toward the cursor")
+
+	camera.apply_zoom_at(-1, Vector2(750.0, 250.0), Vector2(1000.0, 500.0))
+	assert_true(camera.logical_position.local.is_equal_approx(Vector2.ZERO), "inverse zoom preserves the anchored logical point")
+	assert_equal(positions.size(), 2, "each cursor compensation emits a logical position change")
+	camera.free()
+
+
+func _test_zoom_uses_each_scroll_events_current_cursor() -> void:
+	var camera = CameraController.new()
+	camera.apply_zoom_at(1, Vector2(750.0, 250.0), Vector2(1000.0, 500.0))
+	camera.apply_zoom_at(1, Vector2(250.0, 250.0), Vector2(1000.0, 500.0))
+	assert_true(camera.logical_position.local.is_equal_approx(Vector2(0.36, 0.0)), "moving the cursor redirects the next zoom step")
+	camera.free()
+
+
+func _test_zoom_limits_and_invalid_viewport_do_not_move_camera() -> void:
+	var camera = CameraController.new()
+	var positions: Array = []
+	var sizes: Array[float] = []
+	camera.logical_position_changed.connect(func(position): positions.append(position))
+	camera.zoom_changed.connect(func(new_size: float): sizes.append(new_size))
+
+	camera.apply_zoom_at(1, Vector2(750.0, 250.0), Vector2(1000.0, 0.0))
+	assert_equal(camera.logical_position.local, Vector2.ZERO, "invalid viewport ignores cursor compensation")
+	camera.apply_zoom_steps(100)
+	positions.clear()
+	sizes.clear()
+	camera.apply_zoom_at(1, Vector2(900.0, 250.0), Vector2(1000.0, 500.0))
+	assert_equal(camera.logical_position.local, Vector2.ZERO, "clamped zoom does not move the camera")
+	assert_equal(positions.size(), 0, "clamped zoom emits no position change")
+	assert_equal(sizes.size(), 0, "clamped zoom emits no size change")
 	camera.free()
