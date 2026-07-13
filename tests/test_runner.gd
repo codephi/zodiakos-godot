@@ -10,6 +10,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/visuals/test_visual_palette.gd"),
 	preload("res://tests/visuals/test_geometric_components.gd"),
 	preload("res://tests/demo/test_geometric_visual_demo.gd"),
+	preload("res://tests/demo/test_infinite_star_map_demo.gd"),
 ]
 
 
