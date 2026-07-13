@@ -32,6 +32,10 @@ func prepare() -> bool:
 	var transaction_started := database.query("BEGIN TRANSACTION")
 	var writes_succeeded := transaction_started
 	if writes_succeeded:
+		writes_succeeded = database.query(
+			"UPDATE catalog_metadata SET catalog_version=1"
+		)
+	if writes_succeeded:
 		writes_succeeded = _insert_system(
 			database,
 			"catalog:fixture",

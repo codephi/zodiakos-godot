@@ -6,6 +6,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/application/catalog/test_catalog_contracts.gd"),
 	preload("res://tests/application/catalog/test_catalog_validator.gd"),
 	preload("res://tests/adapters/persistence/test_sqlite_scientific_catalog_repository.gd"),
+	preload("res://tests/adapters/persistence/test_production_catalog.gd"),
 	preload("res://tests/domain/universe/test_universe_coordinates.gd"),
 	preload("res://tests/domain/universe/test_generation_foundations.gd"),
 	preload("res://tests/domain/universe/test_universe_generator.gd"),
