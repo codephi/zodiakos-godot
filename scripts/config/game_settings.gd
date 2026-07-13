@@ -29,9 +29,24 @@ extends Resource
 @export var universe_max_cluster_radius: float
 @export var universe_max_isolated_stars: int
 @export var universe_minimum_star_distance: float
+@export var universe_minimum_system_distance: float
 @export var universe_max_stars_per_sector: int
 @export var universe_visual_types: Array[StringName]
 @export var universe_visual_type_weights: Array[int]
+
+@export_category("Galaxy Shape")
+@export var galaxy_disk_radius_pc: float
+@export var galaxy_halo_radius_pc: float
+@export var galaxy_disk_scale_length_pc: float
+@export var galaxy_bulge_scale_radius_pc: float
+@export var galaxy_bar_half_length_pc: float
+@export var galaxy_bar_axis_ratio: float
+@export var galaxy_bar_angle_deg: float
+@export var galaxy_spiral_arm_count: int
+@export var galaxy_spiral_pitch_deg: float
+@export var galaxy_spiral_arm_width_pc: float
+@export var galaxy_halo_weight: float
+@export var galaxy_max_candidate_systems_per_sector: int
 
 @export_category("Visual Palette")
 @export var neutral_owner_color: Color
@@ -88,6 +103,7 @@ func validation_errors() -> PackedStringArray:
 	_validate_camera(errors)
 	_validate_streaming(errors)
 	_validate_universe(errors)
+	_validate_galaxy(errors)
 	_validate_visuals(errors)
 	_validate_demo(errors)
 	return errors
@@ -136,6 +152,11 @@ func _validate_universe(errors: PackedStringArray) -> void:
 		"universe_minimum_star_distance",
 		universe_minimum_star_distance
 	)
+	_require_positive(
+		errors,
+		"universe_minimum_system_distance",
+		universe_minimum_system_distance
+	)
 	var required_capacity := (
 		universe_max_clusters * universe_max_cluster_stars
 		+ universe_max_isolated_stars
@@ -152,6 +173,28 @@ func _validate_universe(errors: PackedStringArray) -> void:
 	for weight in universe_visual_type_weights:
 		if weight <= 0:
 			errors.append("universe_visual_type_weights must contain positive values")
+
+
+func _validate_galaxy(errors: PackedStringArray) -> void:
+	_require_positive(errors, "galaxy_disk_radius_pc", galaxy_disk_radius_pc)
+	_require_positive(errors, "galaxy_halo_radius_pc", galaxy_halo_radius_pc)
+	_require_positive(errors, "galaxy_disk_scale_length_pc", galaxy_disk_scale_length_pc)
+	_require_positive(errors, "galaxy_bulge_scale_radius_pc", galaxy_bulge_scale_radius_pc)
+	_require_positive(errors, "galaxy_bar_half_length_pc", galaxy_bar_half_length_pc)
+	_require_positive(errors, "galaxy_spiral_arm_count", galaxy_spiral_arm_count)
+	_require_positive(errors, "galaxy_spiral_pitch_deg", galaxy_spiral_pitch_deg)
+	_require_positive(errors, "galaxy_spiral_arm_width_pc", galaxy_spiral_arm_width_pc)
+	_require_positive(
+		errors,
+		"galaxy_max_candidate_systems_per_sector",
+		galaxy_max_candidate_systems_per_sector
+	)
+	if galaxy_bar_axis_ratio <= 0.0 or galaxy_bar_axis_ratio > 1.0:
+		errors.append("galaxy_bar_axis_ratio must satisfy 0 < value <= 1")
+	if galaxy_halo_weight < 0.0 or galaxy_halo_weight > 1.0:
+		errors.append("galaxy_halo_weight must be between 0 and 1")
+	if galaxy_disk_radius_pc >= galaxy_halo_radius_pc:
+		errors.append("galaxy radii must satisfy disk radius < halo radius")
 
 
 func _validate_visuals(errors: PackedStringArray) -> void:

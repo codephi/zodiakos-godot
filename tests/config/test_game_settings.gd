@@ -10,12 +10,29 @@ func run() -> void:
 		"central settings use the typed resource"
 	)
 	assert_equal(Settings.camera_min_zoom, 20.0, "camera minimum zoom")
-	assert_equal(Settings.camera_max_zoom, 300.0, "camera maximum zoom")
+	assert_equal(Settings.camera_max_zoom, 30000.0, "camera maximum zoom")
 	assert_equal(Settings.camera_initial_zoom, 50.0, "camera initial zoom")
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
 	assert_equal(Settings.universe_global_seed, 0x5A4F4449414B4F53, "global seed")
 	assert_equal(Settings.universe_sector_size, 40.0, "sector size")
+	assert_equal(Settings.galaxy_disk_radius_pc, 50000.0, "disk radius")
+	assert_equal(Settings.galaxy_halo_radius_pc, 60000.0, "halo radius")
+	assert_equal(Settings.galaxy_disk_scale_length_pc, 2600.0, "disk scale")
+	assert_equal(Settings.galaxy_bulge_scale_radius_pc, 1000.0, "bulge scale")
+	assert_equal(Settings.galaxy_bar_half_length_pc, 5000.0, "bar length")
+	assert_equal(Settings.galaxy_bar_axis_ratio, 0.4, "bar axis ratio")
+	assert_equal(Settings.galaxy_bar_angle_deg, 27.0, "bar angle")
+	assert_equal(Settings.galaxy_spiral_arm_count, 4, "spiral arms")
+	assert_equal(Settings.galaxy_spiral_pitch_deg, 12.5, "spiral pitch")
+	assert_equal(Settings.galaxy_spiral_arm_width_pc, 500.0, "spiral width")
+	assert_equal(Settings.galaxy_halo_weight, 0.02, "halo weight")
+	assert_equal(
+		Settings.galaxy_max_candidate_systems_per_sector,
+		32,
+		"candidate cap"
+	)
+	assert_equal(Settings.universe_minimum_system_distance, 1.5, "system spacing")
 	assert_equal(
 		Settings.universe_visual_type_weights,
 		[35, 25, 20, 15, 5],
@@ -40,10 +57,94 @@ func run() -> void:
 	invalid.camera_zoom_factor = 1.0
 	invalid.stream_min_aspect_ratio = 0.0
 	invalid.universe_min_clusters = invalid.universe_max_clusters + 1
+	invalid.galaxy_bar_axis_ratio = 0.0
 	var empty_visual_types: Array[StringName] = []
 	var empty_visual_weights: Array[int] = []
 	invalid.universe_visual_types = empty_visual_types
 	invalid.universe_visual_type_weights = empty_visual_weights
 	var errors: PackedStringArray = invalid.validation_errors()
-	assert_true(errors.size() >= 5, "validation reports every invalid relationship")
+	assert_true(errors.size() >= 6, "validation reports every invalid relationship")
 	assert_true(not invalid.is_valid(), "invalid settings are rejected")
+
+	_assert_validation_error(
+		"galaxy_disk_scale_length_pc",
+		0.0,
+		"galaxy_disk_scale_length_pc must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_bulge_scale_radius_pc",
+		0.0,
+		"galaxy_bulge_scale_radius_pc must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_bar_half_length_pc",
+		0.0,
+		"galaxy_bar_half_length_pc must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_spiral_arm_count",
+		0,
+		"galaxy_spiral_arm_count must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_spiral_pitch_deg",
+		0.0,
+		"galaxy_spiral_pitch_deg must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_spiral_arm_width_pc",
+		0.0,
+		"galaxy_spiral_arm_width_pc must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_max_candidate_systems_per_sector",
+		0,
+		"galaxy_max_candidate_systems_per_sector must be positive"
+	)
+	_assert_validation_error(
+		"universe_minimum_system_distance",
+		0.0,
+		"universe_minimum_system_distance must be positive"
+	)
+	_assert_validation_error(
+		"galaxy_bar_axis_ratio",
+		0.0,
+		"galaxy_bar_axis_ratio must satisfy 0 < value <= 1"
+	)
+	_assert_validation_error(
+		"galaxy_bar_axis_ratio",
+		1.01,
+		"galaxy_bar_axis_ratio must satisfy 0 < value <= 1"
+	)
+	_assert_validation_error(
+		"galaxy_halo_weight",
+		-0.01,
+		"galaxy_halo_weight must be between 0 and 1"
+	)
+	_assert_validation_error(
+		"galaxy_halo_weight",
+		1.01,
+		"galaxy_halo_weight must be between 0 and 1"
+	)
+
+	var invalid_radii = Settings.duplicate(true)
+	invalid_radii.galaxy_disk_radius_pc = invalid_radii.galaxy_halo_radius_pc
+	assert_true(
+		invalid_radii.validation_errors().has(
+			"galaxy radii must satisfy disk radius < halo radius"
+		),
+		"disk radius must remain smaller than halo radius"
+	)
+
+
+func _assert_validation_error(
+	field_name: StringName,
+	value: Variant,
+	expected_error: String
+) -> void:
+	var invalid = Settings.duplicate(true)
+	invalid.set(field_name, value)
+	assert_true(
+		invalid.validation_errors().has(expected_error),
+		"%s rejects %s" % [field_name, value]
+	)
