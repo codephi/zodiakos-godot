@@ -105,7 +105,9 @@ class FakeGenerator extends RefCounted:
 func run() -> void:
 	_test_sol_keeps_catalog_identity_and_scientific_position()
 	_test_catalog_anchors_all_survive_and_suppress_procedural_candidates()
+	_test_anchor_rejection_precedes_pairwise_procedural_resolution()
 	_test_procedural_priority_and_id_resolve_border_conflicts_deterministically()
+	_test_second_anchor_margin_resolves_first_margin_candidate()
 	_test_pairwise_local_winner_prevents_chain_acceptance()
 	_test_negative_coordinates_and_half_open_edges_have_one_owner()
 	_test_use_case_snapshots_generator_scalars()
@@ -136,13 +138,13 @@ func _test_sol_keeps_catalog_identity_and_scientific_position() -> void:
 		)
 	assert_equal(
 		repository.requested_bounds[0],
-		Rect2(Vector2(8118.5, -1.5), Vector2(43.0, 43.0)),
-		"catalog query grows target bounds by the spacing snapshot"
+		Rect2(Vector2(8117.0, -3.0), Vector2(46.0, 46.0)),
+		"catalog query grows target bounds by twice the spacing snapshot"
 	)
 	assert_equal(
 		generator.requested_bounds[0],
-		repository.requested_bounds[0],
-		"catalog and procedural generation share the same global margin"
+		Rect2(Vector2(8118.5, -1.5), Vector2(43.0, 43.0)),
+		"procedural generation uses the first spacing margin"
 	)
 
 
@@ -167,6 +169,20 @@ func _test_catalog_anchors_all_survive_and_suppress_procedural_candidates() -> v
 	if far != null:
 		assert_equal(far.source, &"procedural", "generated system keeps procedural source")
 		assert_equal(far.galactocentric_z_pc, 0.0, "procedural system stays on map plane")
+
+
+func _test_anchor_rejection_precedes_pairwise_procedural_resolution() -> void:
+	var anchor = _anchor(&"catalog:a", Vector3(10.0, 10.0, 0.0))
+	var candidates := [
+		_candidate(&"proc:b", Vector2(11.0, 10.0), Coordinate.new(0, 0), 1),
+		_candidate(&"proc:c", Vector2(12.0, 10.0), Coordinate.new(0, 0), 2),
+	]
+	var loader = LoadGalaxySector.new(FakeRepository.new([anchor]), FakeGenerator.new(candidates))
+	assert_equal(
+		_system_ids(loader.generate_sector(Coordinate.new(0, 0)).systems),
+		[&"catalog:a", &"proc:c"],
+		"anchor removes B before B can defeat C in pairwise resolution"
+	)
 
 
 func _test_procedural_priority_and_id_resolve_border_conflicts_deterministically() -> void:
@@ -195,6 +211,35 @@ func _test_procedural_priority_and_id_resolve_border_conflicts_deterministically
 		[&"proc:alpha"],
 		"lexicographically lower id breaks equal priorities"
 	)
+
+
+func _test_second_anchor_margin_resolves_first_margin_candidate() -> void:
+	var anchor = _anchor(&"catalog:a", Vector3(42.8, 10.0, 4.0))
+	var candidates := [
+		_candidate(&"proc:b", Vector2(41.4, 10.0), Coordinate.new(1, 0), 1),
+		_candidate(&"proc:c", Vector2(39.95, 10.0), Coordinate.new(0, 0), 2),
+	]
+	var repository = FakeRepository.new([anchor])
+	var generator = FakeGenerator.new(candidates)
+	var loader = LoadGalaxySector.new(repository, generator)
+	var systems = loader.generate_sector(Coordinate.new(0, 0)).systems
+
+	assert_equal(
+		_system_ids(systems),
+		[&"proc:c"],
+		"second-margin anchor removes border B so target-owned C survives"
+	)
+	assert_equal(
+		repository.requested_bounds[0],
+		Rect2(Vector2(-3.0, -3.0), Vector2(46.0, 46.0)),
+		"anchor query covers two spacing margins"
+	)
+	assert_equal(
+		generator.requested_bounds[0],
+		Rect2(Vector2(-1.5, -1.5), Vector2(43.0, 43.0)),
+		"candidate query remains on one spacing margin"
+	)
+	assert_equal(_find_system(systems, &"catalog:a"), null, "margin anchor is not materialized")
 
 
 func _test_pairwise_local_winner_prevents_chain_acceptance() -> void:
@@ -240,8 +285,13 @@ func _test_use_case_snapshots_generator_scalars() -> void:
 	var sector = loader.generate_sector(Coordinate.new(1, 0))
 	assert_equal(
 		repository.requested_bounds[0],
-		Rect2(Vector2(38.5, -1.5), Vector2(43.0, 43.0)),
+		Rect2(Vector2(37.0, -3.0), Vector2(46.0, 46.0)),
 		"use case remains bound to construction-time sector size and spacing"
+	)
+	assert_equal(
+		generator.requested_bounds[0],
+		Rect2(Vector2(38.5, -1.5), Vector2(43.0, 43.0)),
+		"candidate margin also remains bound to construction-time scalars"
 	)
 	assert_equal(sector.generator_version, 7, "use case snapshots generator version")
 

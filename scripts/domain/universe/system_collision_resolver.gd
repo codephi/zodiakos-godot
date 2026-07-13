@@ -21,12 +21,12 @@ func _init(minimum_distance: float) -> void:
 
 
 func resolve(candidates: Array, anchors: Array) -> Resolution:
-	var ordered_candidates := candidates.filter(_has_finite_position)
+	var ordered_candidates := candidates.filter(_has_finite_position).filter(
+		func(candidate): return not _conflicts_with_anchor(candidate, anchors)
+	)
 	ordered_candidates.sort_custom(_candidate_precedes)
 	var accepted := []
 	for candidate in ordered_candidates:
-		if _conflicts_with_anchor(candidate, anchors):
-			continue
 		if not _is_local_winner(candidate, ordered_candidates):
 			continue
 		accepted.append(candidate)

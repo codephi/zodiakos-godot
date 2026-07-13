@@ -29,9 +29,10 @@ func _init(catalog_repository, procedural_generator) -> void:
 func generate_sector(coordinate: SectorCoordinate) -> UniverseSector:
 	var target_origin := _sector_origin(coordinate)
 	var target_bounds := Rect2(target_origin, Vector2.ONE * _sector_size)
-	var query_bounds := target_bounds.grow(_minimum_distance)
-	var anchors: Array = _repository.systems_in_bounds(query_bounds)
-	var candidates: Array = _generator.procedural_candidates_in_bounds(query_bounds)
+	var candidate_bounds := target_bounds.grow(_minimum_distance)
+	var anchor_bounds := candidate_bounds.grow(_minimum_distance)
+	var anchors: Array = _repository.systems_in_bounds(anchor_bounds)
+	var candidates: Array = _generator.procedural_candidates_in_bounds(candidate_bounds)
 	var resolution = _resolver.resolve(candidates, anchors)
 	var systems := []
 	for anchor in resolution.anchors:
