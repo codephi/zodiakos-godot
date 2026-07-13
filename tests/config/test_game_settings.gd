@@ -147,14 +147,29 @@ func run() -> void:
 		"system star count must satisfy 1 <= minimum <= maximum"
 	)
 	_assert_validation_error(
+		"system_max_stars",
+		27,
+		"system_max_stars must be at most 26"
+	)
+	_assert_validation_error(
 		"system_max_planets",
 		-1,
 		"system_max_planets must be nonnegative"
 	)
 	_assert_validation_error(
+		"system_max_planets",
+		26,
+		"system_max_planets must be at most 25"
+	)
+	_assert_validation_error(
 		"system_max_moons_per_planet",
 		-1,
 		"system_max_moons_per_planet must be nonnegative"
+	)
+	_assert_validation_error(
+		"system_max_moons_per_planet",
+		4000,
+		"system_max_moons_per_planet must be at most 3999"
 	)
 	_assert_validation_error(
 		"system_max_minor_bodies",

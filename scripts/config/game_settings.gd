@@ -7,6 +7,9 @@ const SUPPORTED_PLANET_TYPES: Array[StringName] = [
 	&"ice",
 	&"volcanic",
 ]
+const SYSTEM_MAX_STARS_LIMIT := 26
+const SYSTEM_MAX_PLANETS_LIMIT := 25
+const SYSTEM_MAX_MOONS_PER_PLANET_LIMIT := 3999
 
 @export_category("Map Camera")
 @export var camera_min_zoom: float
@@ -183,12 +186,18 @@ func _validate_galaxy(errors: PackedStringArray) -> void:
 func _validate_system_composition(errors: PackedStringArray) -> void:
 	if system_min_stars < 1 or system_min_stars > system_max_stars:
 		errors.append("system star count must satisfy 1 <= minimum <= maximum")
+	if system_max_stars > SYSTEM_MAX_STARS_LIMIT:
+		errors.append("system_max_stars must be at most 26")
 	_require_nonnegative(errors, "system_max_planets", system_max_planets)
+	if system_max_planets > SYSTEM_MAX_PLANETS_LIMIT:
+		errors.append("system_max_planets must be at most 25")
 	_require_nonnegative(
 		errors,
 		"system_max_moons_per_planet",
 		system_max_moons_per_planet
 	)
+	if system_max_moons_per_planet > SYSTEM_MAX_MOONS_PER_PLANET_LIMIT:
+		errors.append("system_max_moons_per_planet must be at most 3999")
 	_require_nonnegative(errors, "system_max_minor_bodies", system_max_minor_bodies)
 	if system_planet_types.is_empty():
 		errors.append("system_planet_types must not be empty")
