@@ -30,7 +30,7 @@ func update_center(position) -> void:
 
 
 func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
-	if viewport_size.y <= 0.0:
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
 	var next_load := projection.load_radii(
 		orthographic_size,

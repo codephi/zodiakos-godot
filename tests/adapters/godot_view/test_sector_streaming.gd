@@ -30,6 +30,7 @@ func run() -> void:
 	_test_stats_emit_only_when_observable_state_changes()
 	_test_active_sector_is_not_regenerated()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
+	_test_non_positive_viewport_width_is_ignored()
 	_test_invalid_visual_type_materializes_with_safe_fallback()
 
 
@@ -197,6 +198,48 @@ func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> 
 	assert_true(
 		view.active_sector_count() <= 63,
 		"zooming in unloads sectors outside hysteresis"
+	)
+	controller.free()
+	view.free()
+
+
+func _test_non_positive_viewport_width_is_ignored() -> void:
+	var generator = CountingGenerator.new()
+	var view = View.new()
+	var controller = Controller.new()
+	controller.configure(
+		generator,
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	controller.update_view(300.0, Vector2(1920.0, 1080.0))
+	controller.process_pending(500)
+	var radii_before: Vector2i = controller.load_radii
+	var active_before: int = view.active_sector_count()
+	var calls_before: Dictionary = generator.calls_by_sector.duplicate()
+
+	controller.update_view(300.0, Vector2(0.0, 1080.0))
+	controller.process_pending(500)
+	assert_equal(controller.load_radii, radii_before, "zero viewport width keeps load radii")
+	assert_equal(view.active_sector_count(), active_before, "zero viewport width keeps sectors")
+	assert_equal(generator.calls_by_sector, calls_before, "zero viewport width skips generation")
+
+	controller.update_view(300.0, Vector2(-1920.0, 1080.0))
+	controller.process_pending(500)
+	assert_equal(
+		controller.load_radii,
+		radii_before,
+		"negative viewport width keeps load radii"
+	)
+	assert_equal(
+		view.active_sector_count(),
+		active_before,
+		"negative viewport width keeps sectors"
+	)
+	assert_equal(
+		generator.calls_by_sector,
+		calls_before,
+		"negative viewport width skips generation"
 	)
 	controller.free()
 	view.free()
