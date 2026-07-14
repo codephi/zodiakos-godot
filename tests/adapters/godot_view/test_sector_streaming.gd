@@ -398,6 +398,17 @@ func _test_runtime_budget_changes_reconcile_immediately() -> void:
 	custom.stream_sectors_per_frame = 0
 	controller.process_pending()
 	assert_equal(view.active_sector_count(), 0, "zero runtime frame budget pauses materialization")
+	custom.stream_sectors_per_frame = 7
+	var batches := 0
+	while controller.pending_sector_count() > 0 and batches < 100:
+		controller.process_pending()
+		batches += 1
+	assert_true(batches < 100, "runtime-cap stream finishes within a bounded batch count")
+	assert_equal(
+		view.active_sector_count(),
+		controller.target_sector_count(),
+		"shrinking the cap does not lose scheduled coordinates"
+	)
 	controller.free()
 	view.free()
 
