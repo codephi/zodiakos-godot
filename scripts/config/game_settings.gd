@@ -121,7 +121,7 @@ func validation_errors() -> PackedStringArray:
 
 
 func _validate_camera(errors: PackedStringArray) -> void:
-	_require_positive(errors, "camera_min_zoom", camera_min_zoom)
+	_require_nonnegative(errors, "camera_min_zoom", camera_min_zoom)
 	if camera_min_zoom > camera_initial_zoom or camera_initial_zoom > camera_max_zoom:
 		errors.append("camera zoom order must be min <= initial <= max")
 	if camera_zoom_factor <= 0.0 or camera_zoom_factor >= 1.0:

@@ -9,8 +9,8 @@ func run() -> void:
 		Settings is GameSettingsResource,
 		"central settings use the typed resource"
 	)
-	assert_equal(Settings.camera_min_zoom, 20.0, "camera minimum zoom")
-	assert_equal(Settings.camera_max_zoom, 30000.0, "camera maximum zoom")
+	assert_equal(Settings.camera_min_zoom, 0.0, "camera minimum zoom")
+	assert_equal(Settings.camera_max_zoom, 1000.0, "camera maximum zoom")
 	assert_equal(Settings.camera_initial_zoom, 50.0, "camera initial zoom")
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
@@ -76,6 +76,11 @@ func run() -> void:
 	assert_true(errors.size() >= 5, "validation reports every invalid relationship")
 	assert_true(not invalid.is_valid(), "invalid settings are rejected")
 
+	_assert_validation_error(
+		"camera_min_zoom",
+		-0.01,
+		"camera_min_zoom must be nonnegative"
+	)
 	_assert_validation_error(
 		"galaxy_disk_scale_length_pc",
 		0.0,

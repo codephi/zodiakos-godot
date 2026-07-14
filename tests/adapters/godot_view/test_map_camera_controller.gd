@@ -73,16 +73,18 @@ func _test_zoom_clamps_and_signal() -> void:
 	var camera = CameraController.new()
 	var changed_sizes: Array[float] = []
 	camera.zoom_changed.connect(func(new_size: float): changed_sizes.append(new_size))
-	assert_equal(Settings.camera_max_zoom, 30000.0, "map can zoom out to the approved distance")
+	assert_equal(Settings.camera_max_zoom, 1000.0, "map can zoom out to the approved distance")
 
 	camera.apply_zoom_steps(100)
-	assert_equal(camera.size, Settings.camera_min_zoom, "zoom in clamps exactly to the minimum")
+	var zoomed_in_size: float = camera.size
+	assert_true(zoomed_in_size > 0.0, "finite zoom-in remains positive")
+	assert_true(zoomed_in_size < 0.001, "large zoom-in approaches the zero minimum")
 	camera.apply_zoom_steps(-200)
 	assert_equal(camera.size, Settings.camera_max_zoom, "zoom out clamps exactly to the maximum")
 	assert_equal(
 		changed_sizes,
-		[Settings.camera_min_zoom, Settings.camera_max_zoom],
-		"each zoom command emits the clamped size"
+		[zoomed_in_size, Settings.camera_max_zoom],
+		"each zoom command emits its size"
 	)
 	camera.free()
 
@@ -119,10 +121,11 @@ func _test_zoom_limits_and_invalid_viewport_do_not_move_camera() -> void:
 
 	camera.apply_zoom_at(1, Vector2(750.0, 250.0), Vector2(1000.0, 0.0))
 	assert_equal(camera.logical_position.local, Vector2.ZERO, "invalid viewport ignores cursor compensation")
-	camera.apply_zoom_steps(100)
+	camera.apply_zoom_steps(-100)
+	assert_equal(camera.size, Settings.camera_max_zoom, "no-signal test reaches maximum zoom")
 	positions.clear()
 	sizes.clear()
-	camera.apply_zoom_at(1, Vector2(900.0, 250.0), Vector2(1000.0, 500.0))
+	camera.apply_zoom_at(-1, Vector2(900.0, 250.0), Vector2(1000.0, 500.0))
 	assert_equal(camera.logical_position.local, Vector2.ZERO, "clamped zoom does not move the camera")
 	assert_equal(positions.size(), 0, "clamped zoom emits no position change")
 	assert_equal(sizes.size(), 0, "clamped zoom emits no size change")
