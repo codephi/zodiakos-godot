@@ -10,43 +10,43 @@ func run() -> void:
 	var center = Coordinate.new(4, -2)
 	assert_equal(
 		projection.load_radii(300.0, 16.0 / 9.0),
-		Vector2i(14, 14),
-		"render scale grows with zoom and respects the configured aspect cap"
+		Vector2i(20, 12),
+		"three viewport widths and heights cover the 16:9 stream area"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 9.0 / 16.0),
-		Vector2i(8, 14),
-		"portrait scale follows visible width"
+		Vector2i(7, 12),
+		"portrait coverage preserves the three by three viewport grid"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 32.0 / 9.0),
-		Vector2i(14, 14),
-		"ultrawide scale respects the configured aspect cap"
+		Vector2i(40, 12),
+		"ultrawide coverage preserves the supported viewport aspect"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1920.0),
-		Vector2i(14, 14),
+		Vector2i(45, 12),
 		"degenerate wide viewport clamps before scaling"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1.0 / 1920.0),
-		Vector2i(4, 14),
+		Vector2i(3, 12),
 		"degenerate tall viewport retains scaled horizontal coverage"
 	)
 	assert_equal(
 		projection.load_radii(500.0, 1.0),
-		Vector2i(35, 35),
-		"midpoint zoom uses the midpoint render scale"
+		Vector2i(19, 19),
+		"viewport grid multiplier stays fixed outside production zoom"
 	)
 	assert_equal(
 		projection.load_radii(30.0, 1.0),
-		Vector2i(1, 1),
-		"near zoom loads only the current and neighboring sectors"
+		Vector2i(2, 2),
+		"near zoom still preloads the eight neighboring viewports"
 	)
 	assert_equal(
 		projection.load_radii(1000.0, 1.0),
-		Vector2i(125, 125),
-		"maximum zoom reaches the configured maximum render scale"
+		Vector2i(38, 38),
+		"fixed viewport grid does not amplify with zoom progress"
 	)
 	assert_equal(
 		projection.visible_radii(300.0, 1.0),
@@ -58,8 +58,18 @@ func run() -> void:
 		Vector2i(3, 4),
 		"visible coverage preserves safe rectangular aspect"
 	)
-	var visible_at_max: Vector2i = projection.visible_radii(1000.0, 1.0)
-	var load_at_max: Vector2i = projection.load_radii(1000.0, 1.0)
+	assert_equal(
+		projection.visible_radii(100.0, 16.0 / 9.0),
+		Vector2i(3, 2),
+		"production maximum zoom keeps the visible center compact"
+	)
+	assert_equal(
+		projection.load_radii(100.0, 16.0 / 9.0),
+		Vector2i(7, 4),
+		"production maximum zoom loads the exact surrounding viewport grid"
+	)
+	var visible_at_max: Vector2i = projection.visible_radii(100.0, 16.0 / 9.0)
+	var load_at_max: Vector2i = projection.load_radii(100.0, 16.0 / 9.0)
 	assert_true(
 		load_at_max.x >= visible_at_max.x and load_at_max.y >= visible_at_max.y,
 		"expanded coverage contains visible coverage"
@@ -85,7 +95,7 @@ func run() -> void:
 
 	var custom = Settings.duplicate(true)
 	custom.universe_sector_size = 100.0
-	custom.stream_render_scale = 1.0
+	custom.stream_viewport_grid_size = 1
 	custom.stream_load_margin = 2
 	custom.stream_unload_margin = 4
 	custom.stream_min_aspect_ratio = 0.5
