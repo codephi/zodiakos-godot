@@ -17,7 +17,7 @@ Permitir que o jogador afaste a câmera até visualizar uma área maior do mapa 
 
 O `MapCameraController` passa a limitar o afastamento em `300.0`. Como o streaming atual usa um raio fixo adequado ao limite anterior, ele também deverá receber a extensão visível da câmera e calcular quantos setores são necessários em cada eixo.
 
-O cálculo usará o tamanho ortográfico, a proporção da viewport e o tamanho canônico do setor. Uma margem de um setor será mantida além da área visível para evitar surgimento tardio de estrelas nas bordas. A descarga usará uma margem adicional de histerese para impedir carga e remoção repetidas durante pequenos movimentos.
+O cálculo usará o tamanho ortográfico, a proporção da viewport e o tamanho canônico do setor. Uma margem de dez setores será mantida além da área visível para evitar surgimento tardio de estrelas nas bordas. A descarga usará uma margem adicional de histerese para impedir carga e remoção repetidas durante pequenos movimentos.
 
 Para manter a cobertura finita em janelas degeneradas e em formatos extremos de PC ou mobile, a proporção usada pelo streaming será limitada ao intervalo `0.25..4.0`. A viewport real não será redimensionada; somente o cálculo preventivo de setores adotará esse limite seguro.
 

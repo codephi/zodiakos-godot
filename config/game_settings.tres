@@ -4,14 +4,13 @@
 
 [resource]
 script = ExtResource("1_settings")
-camera_min_zoom = 0.0
 camera_max_zoom = 1000.0
 camera_initial_zoom = 50.0
 camera_zoom_factor = 0.88
 camera_height = 40.0
 camera_drag_threshold_pixels = 4.0
 stream_initial_load_radii = Vector2i(2, 2)
-stream_load_margin = 1
+stream_load_margin = 10
 stream_unload_margin = 1
 stream_min_aspect_ratio = 0.25
 stream_max_aspect_ratio = 4.0

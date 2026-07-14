@@ -50,7 +50,7 @@ Não entram no recurso central:
 
 ### Streaming do mapa
 
-- margem de carregamento: `1` setor;
+- margem de carregamento: `10` setores;
 - margem adicional de descarregamento: `1` setor;
 - proporção mínima de viewport: `0.25`;
 - proporção máxima de viewport: `4.0`;

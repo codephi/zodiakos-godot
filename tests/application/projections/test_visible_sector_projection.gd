@@ -10,27 +10,27 @@ func run() -> void:
 	var center = Coordinate.new(4, -2)
 	assert_equal(
 		projection.load_radii(300.0, 16.0 / 9.0),
-		Vector2i(8, 5),
-		"maximum zoom covers 16:9 viewport plus one sector margin"
+		Vector2i(17, 14),
+		"reference zoom covers 16:9 viewport plus ten sector rings"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 9.0 / 16.0),
-		Vector2i(4, 5),
+		Vector2i(13, 14),
 		"portrait coverage follows the visible width"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 32.0 / 9.0),
-		Vector2i(15, 5),
+		Vector2i(24, 14),
 		"ultrawide coverage follows the visible width"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1920.0),
-		Vector2i(16, 5),
+		Vector2i(25, 14),
 		"degenerate wide viewports clamp to a safe coverage"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1.0 / 1920.0),
-		Vector2i(2, 5),
+		Vector2i(11, 14),
 		"degenerate tall viewports retain safe horizontal coverage"
 	)
 	var maximum_order = projection.load_order(center, {}, {}, Vector2i(8, 5))

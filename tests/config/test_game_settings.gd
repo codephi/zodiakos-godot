@@ -14,6 +14,7 @@ func run() -> void:
 	assert_equal(Settings.camera_initial_zoom, 50.0, "camera initial zoom")
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
+	assert_equal(Settings.stream_load_margin, 10, "stream preloads ten sector rings")
 	assert_equal(Settings.universe_global_seed, 0x5A4F4449414B4F53, "global seed")
 	assert_equal(Settings.universe_sector_size, 40.0, "sector size")
 	assert_equal(Settings.galaxy_disk_radius_pc, 50000.0, "disk radius")
