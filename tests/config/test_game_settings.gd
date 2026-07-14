@@ -38,6 +38,8 @@ func run() -> void:
 	assert_equal(Settings.system_max_planets, 12, "planet cap")
 	assert_equal(Settings.system_max_moons_per_planet, 4, "moon cap")
 	assert_equal(Settings.system_max_minor_bodies, 8, "minor body cap")
+	assert_true(Settings.performance_metrics_enabled, "performance metrics enabled")
+	assert_equal(Settings.performance_metrics_sample_capacity, 240, "metrics sample capacity")
 	assert_equal(
 		Settings.system_planet_types,
 		[&"rocky", &"gas", &"ice", &"volcanic"],
@@ -180,6 +182,11 @@ func run() -> void:
 		"system_max_minor_bodies",
 		-1,
 		"system_max_minor_bodies must be nonnegative"
+	)
+	_assert_validation_error(
+		&"performance_metrics_sample_capacity",
+		0,
+		"performance_metrics_sample_capacity must be positive"
 	)
 
 	_assert_planet_type_validation(

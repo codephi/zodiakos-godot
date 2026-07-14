@@ -125,8 +125,12 @@ profile prefix. Add these exact global fields and defaults:
 @export var performance_auto_cooldown_seconds: float = 5.0
 @export var performance_selection_tolerance_pixels: float = 12.0
 @export var performance_max_completions_per_frame: int = 8
-@export var performance_metrics_enabled: bool = true
 ```
+
+Reuse the existing `performance_metrics_enabled` and
+`performance_metrics_sample_capacity` fields introduced by the system-composition
+debug metrics plan. Do not redeclare them; retain their validation and Inspector
+values while adding the remaining performance settings.
 
 Validate positive durations/FPS/tolerance/completion count, upgrade ratio strictly
 between zero and one, a supported default ID, unique nested profile IDs and exact

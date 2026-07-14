@@ -58,6 +58,10 @@ const SYSTEM_MAX_MOONS_PER_PLANET_LIMIT := 3999
 @export var system_planet_types: Array[StringName]
 @export var system_planet_type_weights: Array[int]
 
+@export_category("Performance Metrics")
+@export var performance_metrics_enabled: bool
+@export var performance_metrics_sample_capacity: int
+
 @export_category("Visual Palette")
 @export var neutral_owner_color: Color
 @export var ship_styles: Dictionary
@@ -115,6 +119,7 @@ func validation_errors() -> PackedStringArray:
 	_validate_universe(errors)
 	_validate_galaxy(errors)
 	_validate_system_composition(errors)
+	_validate_performance_metrics(errors)
 	_validate_visuals(errors)
 	_validate_demo(errors)
 	return errors
@@ -227,6 +232,14 @@ func _validate_system_composition(errors: PackedStringArray) -> void:
 			has_nonpositive_weight = true
 	if has_nonpositive_weight:
 		errors.append("system_planet_type_weights must contain positive values")
+
+
+func _validate_performance_metrics(errors: PackedStringArray) -> void:
+	_require_positive(
+		errors,
+		"performance_metrics_sample_capacity",
+		performance_metrics_sample_capacity
+	)
 
 
 func _validate_visuals(errors: PackedStringArray) -> void:

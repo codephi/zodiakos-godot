@@ -41,6 +41,8 @@ system_max_moons_per_planet = 4
 system_max_minor_bodies = 8
 system_planet_types = Array[StringName]([&"rocky", &"gas", &"ice", &"volcanic"])
 system_planet_type_weights = Array[int]([45, 20, 25, 10])
+performance_metrics_enabled = true
+performance_metrics_sample_capacity = 240
 neutral_owner_color = Color(0.5, 0.5, 0.5, 1)
 ship_styles = {
 &"colony": {

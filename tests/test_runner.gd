@@ -3,6 +3,7 @@ extends SceneTree
 const TEST_SCRIPTS := [
 	preload("res://tests/dependencies/test_sqlite_dependency.gd"),
 	preload("res://tests/config/test_game_settings.gd"),
+	preload("res://tests/application/performance/test_system_composition_metrics.gd"),
 	preload("res://tests/application/catalog/test_catalog_contracts.gd"),
 	preload("res://tests/application/catalog/test_catalog_validator.gd"),
 	preload("res://tests/adapters/persistence/test_sqlite_scientific_catalog_repository.gd"),
