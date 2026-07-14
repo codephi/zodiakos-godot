@@ -6,6 +6,9 @@ signal stats_changed(active_sectors: int, visible_systems: int, center_key: Stri
 const ProjectionScript = preload(
 	"res://scripts/application/projections/visible_sector_projection.gd"
 )
+const SectorRingIterator = preload(
+	"res://scripts/application/streaming/sector_ring_iterator.gd"
+)
 const DefaultSettings = preload("res://config/game_settings.tres")
 
 var settings
@@ -18,6 +21,7 @@ var projection
 var load_radii: Vector2i
 var unload_radii: Vector2i
 var _last_stats := []
+var _iterator
 
 
 func _init(configuration = DefaultSettings) -> void:
@@ -38,7 +42,7 @@ func update_center(position) -> void:
 	if center != null and center.equals(next_center):
 		return
 	center = next_center
-	_reconcile_stream()
+	_reconcile_stream(true)
 
 
 func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
@@ -48,19 +52,20 @@ func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
 		orthographic_size,
 		viewport_size.x / viewport_size.y
 	)
-	if next_load != load_radii:
+	var coverage_changed := next_load != load_radii
+	if coverage_changed:
 		load_radii = next_load
 		unload_radii = projection.unload_radii(load_radii)
-	_reconcile_stream()
+	_reconcile_stream(coverage_changed)
 
 
-func _reconcile_stream() -> void:
+func _reconcile_stream(reset_schedule := false) -> void:
 	view.rebase(center)
-	pending.clear()
-	queued.clear()
-	for coordinate in projection.load_order(center, view.active_keys(), queued, load_radii):
-		pending.append(coordinate)
-		queued[coordinate.key()] = true
+	if reset_schedule or _iterator == null:
+		pending.clear()
+		queued.clear()
+		_iterator = SectorRingIterator.new(center, load_radii)
+		_refill_pending()
 	for coordinate in projection.unload_coordinates(
 		center,
 		view.active_coordinates(),
@@ -68,6 +73,26 @@ func _reconcile_stream() -> void:
 	):
 		view.remove_sector(coordinate)
 	_emit_stats()
+
+
+func _refill_pending() -> void:
+	if _iterator == null:
+		return
+	var active_keys: Dictionary = view.active_keys()
+	var scanned := 0
+	while (
+		pending.size() < settings.stream_max_pending_sectors
+		and scanned < settings.stream_max_pending_sectors
+	):
+		var coordinate = _iterator.next_coordinate()
+		if coordinate == null:
+			return
+		scanned += 1
+		var key: String = coordinate.key()
+		if active_keys.has(key) or queued.has(key):
+			continue
+		pending.append(coordinate)
+		queued[key] = true
 
 
 func _process(_delta: float) -> void:
@@ -81,6 +106,7 @@ func process_pending(limit = null) -> void:
 		var coordinate = pending.pop_front()
 		queued.erase(coordinate.key())
 		view.materialize_sector(generator.generate_sector(coordinate), center)
+	_refill_pending()
 	_emit_stats()
 
 

@@ -48,39 +48,6 @@ func run() -> void:
 		Vector2i(125, 125),
 		"maximum zoom reaches the configured maximum render scale"
 	)
-	var maximum_order = projection.load_order(center, {}, {}, Vector2i(8, 5))
-	assert_equal(
-		maximum_order.size(),
-		187,
-		"rectangular maximum coverage contains 17 by 11 sectors"
-	)
-
-	var order = projection.load_order(center, {}, {}, Vector2i(2, 2))
-	assert_equal(order.size(), 25, "load radius contains 25 sectors")
-	assert_equal(order[0].key(), center.key(), "center loads first")
-	assert_equal(
-		_keys(order).slice(1, 9),
-		[
-			"3:-3",
-			"4:-3",
-			"5:-3",
-			"3:-2",
-			"5:-2",
-			"3:-1",
-			"4:-1",
-			"5:-1",
-		],
-		"equal-distance sectors use y then x order"
-	)
-
-	var active = {center.key(): true}
-	var queued_coordinate = center.offset(-1, -1)
-	var queued = {queued_coordinate.key(): true}
-	var filtered_order = projection.load_order(center, active, queued, Vector2i(2, 2))
-	assert_equal(filtered_order.size(), 23, "active and queued keys are excluded")
-	assert_true(not _keys(filtered_order).has(center.key()), "active key is absent")
-	assert_true(not _keys(filtered_order).has(queued_coordinate.key()), "queued key is absent")
-
 	var distance_three = center.offset(3, 3)
 	var far = [center.offset(4, 0), center.offset(0, -4), distance_three]
 	var unload = projection.unload_coordinates(center, far, Vector2i(3, 3))
@@ -115,7 +82,3 @@ func run() -> void:
 		Vector2i(7, 7),
 		"hysteresis uses injected settings"
 	)
-
-
-func _keys(coordinates: Array) -> Array:
-	return coordinates.map(func(coordinate): return coordinate.key())

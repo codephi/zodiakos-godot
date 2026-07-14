@@ -77,6 +77,8 @@ func run() -> void:
 	_test_active_sector_is_not_regenerated()
 	_test_intra_sector_motion_preserves_stream_state()
 	_test_view_update_reconciles_even_when_radii_are_unchanged()
+	_test_production_maximum_zoom_uses_bounded_lazy_pending()
+	_test_injected_pending_cap_and_zero_processing_limit()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
 	_test_near_zoom_releases_distant_preloaded_sectors()
 	_test_non_positive_viewport_width_is_ignored()
@@ -262,15 +264,58 @@ func _test_view_update_reconciles_even_when_radii_are_unchanged() -> void:
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
+	controller.update_view(50.0, Vector2(1920.0, 1080.0))
 	var rebase_calls_before: int = view.rebase_calls
+	var pending_before: Array = controller.pending.map(func(coordinate): return coordinate.key())
 	controller.update_view(50.0, Vector2(1920.0, 1080.0))
 	assert_equal(
 		view.rebase_calls,
 		rebase_calls_before + 1,
 		"view updates reconcile even when their rounded radii are unchanged"
 	)
+	assert_equal(
+		controller.pending.map(func(coordinate): return coordinate.key()),
+		pending_before,
+		"unchanged radii preserve iterator and pending progress"
+	)
 	controller.free()
 	view.free_delegate()
+
+
+func _test_production_maximum_zoom_uses_bounded_lazy_pending() -> void:
+	var controller = Controller.new()
+	var view = View.new()
+	controller.configure(
+		Generator.new(FakeRepository.new()),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	controller.update_view(1000.0, Vector2(1920.0, 1080.0))
+	assert_equal(controller.load_radii, Vector2i(125, 125), "maximum zoom target")
+	assert_equal(controller.pending.size(), 256, "pending stays at production cap")
+	controller.process_pending(2)
+	assert_equal(view.active_sector_count(), 2, "frame batch generates two sectors")
+	assert_equal(controller.pending.size(), 256, "pending refills after batch")
+	controller.free()
+	view.free()
+
+
+func _test_injected_pending_cap_and_zero_processing_limit() -> void:
+	var custom = _unscaled_stream_settings()
+	custom.stream_max_pending_sectors = 7
+	var controller = Controller.new(custom)
+	var view = View.new(custom)
+	controller.configure(
+		Generator.new(FakeRepository.new(), custom),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	assert_equal(controller.pending.size(), 7, "injected cap bounds initial pending")
+	controller.process_pending(0)
+	assert_equal(view.active_sector_count(), 0, "zero limit generates nothing")
+	assert_equal(controller.pending.size(), 7, "zero limit retains bounded window")
+	controller.free()
+	view.free()
 
 
 func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> void:
@@ -435,6 +480,7 @@ func _unscaled_stream_settings():
 	var custom = Settings.duplicate(true)
 	custom.stream_render_scale = 1.0
 	custom.stream_load_margin = 1
+	custom.stream_max_pending_sectors = 512
 	return custom
 
 

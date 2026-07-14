@@ -43,6 +43,7 @@ func run() -> void:
 	_test_hud_reports_map_stats_and_zoom()
 	_test_reference_zoom_refreshes_stream_coverage()
 	_test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage()
+	_test_maximum_zoom_routes_scaled_lazy_coverage()
 
 
 func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> void:
@@ -149,6 +150,16 @@ func _test_reference_zoom_refreshes_stream_coverage() -> void:
 		Vector2i(14, 14),
 		"demo forwards reference 16:9 coverage"
 	)
+	demo.free()
+
+
+func _test_maximum_zoom_routes_scaled_lazy_coverage() -> void:
+	var demo = Demo.instantiate()
+	var stream = demo.get_node("SectorStreamController")
+	demo.get_node("MapCamera").size = 1000.0
+	demo._refresh_stream_coverage(Vector2(1920.0, 1080.0))
+	assert_equal(stream.load_radii, Vector2i(125, 125), "demo routes max zoom radii")
+	assert_equal(stream.pending.size(), 256, "demo pending remains bounded")
 	demo.free()
 
 
