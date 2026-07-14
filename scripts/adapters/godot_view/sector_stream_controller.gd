@@ -6,8 +6,8 @@ signal stats_changed(active_sectors: int, visible_systems: int, center_key: Stri
 const ProjectionScript = preload(
 	"res://scripts/application/projections/visible_sector_projection.gd"
 )
-const SectorRingIterator = preload(
-	"res://scripts/application/streaming/sector_ring_iterator.gd"
+const PrioritizedSectorIterator = preload(
+	"res://scripts/application/streaming/prioritized_sector_iterator.gd"
 )
 const DefaultSettings = preload("res://config/game_settings.tres")
 
@@ -18,6 +18,7 @@ var center
 var pending := []
 var queued := {}
 var projection
+var visible_radii: Vector2i
 var load_radii: Vector2i
 var unload_radii: Vector2i
 var _last_stats := []
@@ -27,6 +28,7 @@ var _iterator
 func _init(configuration = DefaultSettings) -> void:
 	settings = configuration
 	projection = ProjectionScript.new(settings)
+	visible_radii = settings.stream_initial_load_radii
 	load_radii = settings.stream_initial_load_radii
 	unload_radii = projection.unload_radii(load_radii)
 
@@ -48,12 +50,15 @@ func update_center(position) -> void:
 func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
-	var next_load: Vector2i = projection.load_radii(
+	var aspect_ratio := viewport_size.x / viewport_size.y
+	var next_visible: Vector2i = projection.visible_radii(
 		orthographic_size,
-		viewport_size.x / viewport_size.y
+		aspect_ratio
 	)
-	var coverage_changed := next_load != load_radii
+	var next_load: Vector2i = projection.load_radii(orthographic_size, aspect_ratio)
+	var coverage_changed := next_visible != visible_radii or next_load != load_radii
 	if coverage_changed:
+		visible_radii = next_visible
 		load_radii = next_load
 		unload_radii = projection.unload_radii(load_radii)
 	_reconcile_stream(coverage_changed)
@@ -64,7 +69,7 @@ func _reconcile_stream(reset_schedule := false) -> void:
 	if reset_schedule or _iterator == null:
 		pending.clear()
 		queued.clear()
-		_iterator = SectorRingIterator.new(center, load_radii)
+		_iterator = PrioritizedSectorIterator.new(center, visible_radii, load_radii)
 		_refill_pending()
 	for coordinate in projection.unload_coordinates(
 		center,

@@ -29,6 +29,16 @@ class CountingGenerator extends RefCounted:
 		return delegate.generate_sector(coordinate)
 
 
+class OrderedGenerator extends RefCounted:
+	var coordinates := []
+	var delegate = Generator.new(FakeRepository.new())
+
+
+	func generate_sector(coordinate):
+		coordinates.append(coordinate.offset(0, 0))
+		return delegate.generate_sector(coordinate)
+
+
 class TrackingView extends RefCounted:
 	var delegate = View.new()
 	var rebase_calls := 0
@@ -77,6 +87,7 @@ func run() -> void:
 	_test_active_sector_is_not_regenerated()
 	_test_intra_sector_motion_preserves_stream_state()
 	_test_view_update_reconciles_even_when_radii_are_unchanged()
+	_test_visible_sectors_materialize_before_external_preload()
 	_test_production_maximum_zoom_uses_bounded_lazy_pending()
 	_test_injected_pending_cap_and_zero_processing_limit()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
@@ -280,6 +291,40 @@ func _test_view_update_reconciles_even_when_radii_are_unchanged() -> void:
 	)
 	controller.free()
 	view.free_delegate()
+
+
+func _test_visible_sectors_materialize_before_external_preload() -> void:
+	var generator = OrderedGenerator.new()
+	var view = View.new()
+	var controller = Controller.new()
+	controller.configure(
+		generator,
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	controller.update_view(300.0, Vector2(50.0, 100.0))
+	controller.process_pending(46)
+
+	assert_equal(controller.visible_radii, Vector2i(2, 4), "visible target")
+	assert_equal(controller.load_radii, Vector2i(7, 14), "expanded target")
+	assert_equal(generator.coordinates.size(), 46, "reference requests are generated")
+	for index in 45:
+		var coordinate = generator.coordinates[index]
+		assert_true(
+			absi(coordinate.x) <= 2 and absi(coordinate.y) <= 4,
+			"request %d remains inside visible coverage" % index
+		)
+	var first_external = generator.coordinates[45]
+	assert_true(
+		absi(first_external.x) > 2 or absi(first_external.y) > 4,
+		"first external request follows all visible sectors"
+	)
+	assert_true(
+		controller.pending.size() <= Settings.stream_max_pending_sectors,
+		"visible priority preserves the pending cap"
+	)
+	controller.free()
+	view.free()
 
 
 func _test_production_maximum_zoom_uses_bounded_lazy_pending() -> void:
