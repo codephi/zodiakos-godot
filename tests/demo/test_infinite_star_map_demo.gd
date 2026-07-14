@@ -45,6 +45,8 @@ func run() -> void:
 	_test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage()
 	_test_maximum_zoom_routes_fixed_grid_coverage()
 	_test_runtime_stream_tuning_is_temporary_and_resettable()
+	_test_minimap_composes_with_independent_queries()
+	_test_minimap_camera_follow_and_negative_navigation()
 
 
 func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> void:
@@ -253,4 +255,51 @@ func _test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage() ->
 		Vector2i(40, 12),
 		"ultrawide resize refreshes stream coverage"
 	)
+	demo.free()
+
+
+func _test_minimap_composes_with_independent_queries() -> void:
+	var demo = Demo.instantiate()
+	var minimap = demo.get_node_or_null("DebugHud/StellarMinimap")
+	var controller = demo.get_node_or_null("MinimapController")
+	assert_true(minimap != null, "stellar minimap exists in HUD")
+	assert_true(controller != null, "minimap controller exists")
+	assert_true(
+		demo.minimap_query_service.repository == demo.catalog_repository,
+		"minimap reuses the open catalog repository"
+	)
+	assert_true(
+		demo.minimap_query_service.sector_source == demo.sector_source,
+		"minimap reuses the deterministic sector source"
+	)
+	var pending_before: int = demo.stream.pending_sector_count()
+	var active_before: int = demo.sector_view.active_sector_count()
+	controller.process_pending(1)
+	assert_equal(demo.stream.pending_sector_count(), pending_before, "minimap does not consume stream pending work")
+	assert_equal(demo.sector_view.active_sector_count(), active_before, "minimap creates no 3D sectors")
+	var snapshot: Dictionary = controller.snapshot()
+	assert_true(snapshot.visible_rect.size.x > 0.0, "minimap receives visible camera bounds")
+	assert_true(snapshot.preload_rect.size.x > snapshot.visible_rect.size.x, "minimap receives preload bounds")
+	demo.free()
+
+
+func _test_minimap_camera_follow_and_negative_navigation() -> void:
+	var demo = Demo.instantiate()
+	var camera = demo.get_node("MapCamera")
+	var controller = demo.get_node("MinimapController")
+	var position_type = preload("res://scripts/domain/universe/universe_position.gd")
+	var coordinate_type = preload("res://scripts/domain/universe/sector_coordinate.gd")
+	camera.set_logical_position(position_type.new(
+		coordinate_type.new(-3, 1),
+		Vector2(35.0, 5.0),
+		demo.runtime_settings.universe_sector_size
+	))
+	assert_true(
+		controller.projection.center_global.is_equal_approx(Vector2(-85.0, 45.0)),
+		"camera movement updates minimap follow center"
+	)
+	demo._on_minimap_navigation(Vector2(-125.0, -45.0))
+	assert_equal(camera.logical_position.sector.key(), "-4:-2", "negative target normalizes sector")
+	assert_equal(camera.logical_position.local, Vector2(35.0, 35.0), "negative target normalizes local position")
+	assert_equal(demo.stream.center.key(), "-4:-2", "minimap navigation updates stream center")
 	demo.free()

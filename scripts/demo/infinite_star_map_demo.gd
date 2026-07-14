@@ -6,6 +6,15 @@ const StreamType = preload("res://scripts/adapters/godot_view/sector_stream_cont
 const StreamingDebugPanelType = preload(
 	"res://scripts/adapters/godot_view/streaming_debug_panel.gd"
 )
+const MinimapViewType = preload(
+	"res://scripts/adapters/godot_view/stellar_minimap.gd"
+)
+const MinimapControllerType = preload(
+	"res://scripts/adapters/godot_view/minimap_controller.gd"
+)
+const MinimapQueryService = preload(
+	"res://scripts/application/minimap/minimap_query_service.gd"
+)
 const Generator = preload("res://scripts/domain/universe/universe_generator.gd")
 const LoadGalaxySector = preload(
 	"res://scripts/application/universe/load_galaxy_sector.gd"
@@ -42,10 +51,16 @@ var stream
 var runtime_settings
 var session_default_settings
 var catalog_repository
+var universe_generator
+var sector_source
 var composition_metrics
 var composition_loader
+var minimap
+var minimap_controller
+var minimap_query_service
 var _repository_override
 var _composition_metrics_formatter
+var _last_viewport_size := Vector2(1920.0, 1080.0)
 
 
 func _init(repository_override = null) -> void:
@@ -126,18 +141,18 @@ func _configure_universe_stream() -> void:
 		_show_catalog_error(_validation_message(validation))
 		_close_catalog_repository()
 		return
-	var generator = Generator.new(catalog_repository, runtime_settings)
-	if generator.identity == null:
+	universe_generator = Generator.new(catalog_repository, runtime_settings)
+	if universe_generator.identity == null:
 		_show_catalog_error("Scientific catalog metadata is unavailable")
 		_close_catalog_repository()
 		return
 	composition_loader = LoadSystemComposition.new(
 		catalog_repository,
 		ProceduralSystemFactory.new(),
-		generator.identity,
+		universe_generator.identity,
 		composition_metrics
 	)
-	var sector_source = LoadGalaxySector.new(catalog_repository, generator)
+	sector_source = LoadGalaxySector.new(catalog_repository, universe_generator)
 	map_camera.set_logical_position(
 		UniversePositionType.new(
 			Coordinate.new(203, 0),
@@ -147,6 +162,43 @@ func _configure_universe_stream() -> void:
 	)
 	stream.configure(sector_source, sector_view, map_camera.logical_position)
 	map_camera.logical_position_changed.connect(stream.update_center)
+	map_camera.logical_position_changed.connect(_on_camera_position_changed)
+	_configure_minimap()
+
+
+func _configure_minimap() -> void:
+	minimap_query_service = MinimapQueryService.new(
+		sector_source,
+		catalog_repository,
+		runtime_settings,
+		universe_generator.identity.value
+	)
+	minimap_controller = MinimapControllerType.new(runtime_settings)
+	minimap_controller.name = "MinimapController"
+	add_child(minimap_controller)
+	minimap = MinimapViewType.new(runtime_settings)
+	get_node("DebugHud").add_child(minimap)
+
+	minimap_controller.snapshot_changed.connect(minimap.update_snapshot)
+	minimap.pan_requested.connect(minimap_controller.pan_pixels)
+	minimap.zoom_requested.connect(minimap_controller.zoom_steps_at)
+	minimap.navigation_requested.connect(minimap_controller.navigate_to)
+	minimap.center_requested.connect(minimap_controller.center_on_main_camera)
+	minimap_controller.navigation_requested.connect(_on_minimap_navigation)
+
+	var camera_center := _camera_global_position()
+	var aspect := _viewport_aspect(_last_viewport_size)
+	var preload_height: float = (
+		float(2 * stream.load_radii.y + 1) * runtime_settings.universe_sector_size
+	)
+	minimap_controller.configure(
+		minimap_query_service,
+		camera_center,
+		map_camera.size,
+		aspect,
+		preload_height
+	)
+	_refresh_minimap_state(_last_viewport_size)
 
 
 func _show_catalog_error(message: String) -> void:
@@ -189,6 +241,7 @@ func _update_stats(sectors: int, systems: int, center_key: String) -> void:
 	)
 	stats_label.text = map_text if metrics_text.is_empty() else map_text + "\n" + metrics_text
 	_refresh_stream_debug_metrics()
+	_refresh_minimap_state()
 
 
 func refresh_debug_hud() -> void:
@@ -221,8 +274,62 @@ func _refresh_stream_coverage(viewport_size := Vector2.ZERO) -> void:
 		if viewport == null:
 			viewport = Engine.get_main_loop().root
 		next_viewport_size = viewport.get_visible_rect().size
+	_last_viewport_size = next_viewport_size
 	stream.update_view(map_camera.size, next_viewport_size)
 	_refresh_stream_debug_metrics()
+	_refresh_minimap_state(next_viewport_size)
+
+
+func _on_camera_position_changed(_position) -> void:
+	_refresh_minimap_state()
+
+
+func _refresh_minimap_state(viewport_size := Vector2.ZERO) -> void:
+	if minimap_controller == null or stream.center == null:
+		return
+	var effective_size := viewport_size if viewport_size != Vector2.ZERO else _last_viewport_size
+	var aspect := _viewport_aspect(effective_size)
+	var camera_center := _camera_global_position()
+	var visible_size := Vector2(map_camera.size * aspect, map_camera.size)
+	var sector_size: float = runtime_settings.universe_sector_size
+	var preload_position := Vector2(
+		stream.center.x - stream.load_radii.x,
+		stream.center.y - stream.load_radii.y
+	) * sector_size
+	var preload_size := Vector2(
+		2 * stream.load_radii.x + 1,
+		2 * stream.load_radii.y + 1
+	) * sector_size
+	minimap_controller.set_main_camera_state(
+		camera_center,
+		Rect2(camera_center - visible_size * 0.5, visible_size),
+		Rect2(preload_position, preload_size),
+		aspect
+	)
+
+
+func _camera_global_position() -> Vector2:
+	return (
+		Vector2(map_camera.logical_position.sector.x, map_camera.logical_position.sector.y)
+		* runtime_settings.universe_sector_size
+		+ map_camera.logical_position.local
+	)
+
+
+func _viewport_aspect(viewport_size: Vector2) -> float:
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return 16.0 / 9.0
+	return viewport_size.x / viewport_size.y
+
+
+func _on_minimap_navigation(target_global: Vector2) -> void:
+	map_camera.set_logical_position(
+		UniversePositionType.new(
+			Coordinate.new(),
+			target_global,
+			runtime_settings.universe_sector_size
+		)
+	)
 
 
 func _apply_stream_tuning(
