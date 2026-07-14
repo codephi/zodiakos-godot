@@ -329,21 +329,21 @@ func _test_visible_sectors_materialize_before_external_preload() -> void:
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
-	controller.update_view(300.0, Vector2(100.0, 100.0))
-	controller.process_pending(82)
+	controller.update_view(300.0, Vector2(50.0, 100.0))
+	controller.process_pending(46)
 
-	assert_equal(controller.visible_radii, Vector2i(4, 4), "visible target")
-	assert_equal(controller.load_radii, Vector2i(14, 14), "expanded target")
-	assert_equal(generator.coordinates.size(), 82, "reference requests are generated")
-	for index in 81:
+	assert_equal(controller.visible_radii, Vector2i(2, 4), "visible target")
+	assert_equal(controller.load_radii, Vector2i(7, 14), "expanded target")
+	assert_equal(generator.coordinates.size(), 46, "reference requests are generated")
+	for index in 45:
 		var coordinate = generator.coordinates[index]
 		assert_true(
-			absi(coordinate.x) <= 4 and absi(coordinate.y) <= 4,
+			absi(coordinate.x) <= 2 and absi(coordinate.y) <= 4,
 			"request %d remains inside visible coverage" % index
 		)
-	var first_external = generator.coordinates[81]
+	var first_external = generator.coordinates[45]
 	assert_true(
-		absi(first_external.x) > 4 or absi(first_external.y) > 4,
+		absi(first_external.x) > 2 or absi(first_external.y) > 4,
 		"first external request follows all visible sectors"
 	)
 	assert_true(
@@ -419,8 +419,8 @@ git push origin codex/star-map-engine
 
 ## Completion Checklist
 
-- [ ] No external sector appears before all 81 visible sectors at the reference view.
-- [ ] Final expanded coverage remains 29 by 29 at the reference view.
+- [ ] No external sector appears before all 45 visible sectors at the rectangular reference view.
+- [ ] Final expanded coverage remains 15 by 29 at the rectangular reference view.
 - [ ] Pending queue remains bounded at 256 and frame generation remains 2.
 - [ ] No unrelated Godot editor artifacts are staged.
 - [ ] Focused tests, full suite, catalog validation, and headless smoke pass.
