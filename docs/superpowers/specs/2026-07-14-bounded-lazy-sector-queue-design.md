@@ -71,7 +71,7 @@ The iterator never builds a complete Array and never sorts coordinates.
 - the existing bounded `pending` Array;
 - the existing `queued` key Dictionary.
 
-On center, zoom or viewport reconciliation:
+On center or effective load-radius change:
 
 1. rebase the view;
 2. discard the previous iterator and pending state;
@@ -81,9 +81,16 @@ On center, zoom or viewport reconciliation:
 6. unload active coordinates outside unload radii;
 7. emit changed statistics.
 
+A viewport notification that produces the same center and radii still rebases and
+unloads, but preserves iterator/pending progress. This prevents repeated viewport
+events from restarting enumeration at the center.
+
 `process_pending` keeps its existing per-frame generation limit. After processing
 the batch, it refills pending from the iterator back to the configured maximum.
-This repeats until the iterator is exhausted.
+One refill examines at most `stream_max_pending_sectors` candidates, including
+coordinates skipped because they are already active. This bounds both resident
+pending memory and synchronous enumeration work. Refill continues on later frames
+until the iterator is exhausted.
 
 Changing view while old coordinates remain pending cancels them logically by
 replacing the iterator and clearing pending/queued. Sector generation is still
@@ -92,6 +99,7 @@ synchronous in this phase, so there are no worker results to invalidate.
 ## Behavioral Guarantees
 
 - `pending.size()` never exceeds 256 in production.
+- one reconciliation/refill examines at most 256 iterator candidates;
 - Final coverage is not capped and still follows `stream_render_scale`.
 - Center and nearest rings are generated first.
 - Active sectors are never regenerated during an unchanged reconciliation.
@@ -140,6 +148,7 @@ Controller tests cover:
 - processing two sectors refills back to 256 while work remains;
 - small finite coverage eventually exhausts and materializes every coordinate;
 - unchanged reconciliation skips active sectors;
+- unchanged center/radii preserve iterator progress;
 - center/zoom change replaces stale pending coordinates;
 - invalid viewport preserves iterator and pending state;
 - configured pending cap injection;
