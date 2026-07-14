@@ -41,8 +41,8 @@ Não entram no recurso central:
 
 ### Câmera do mapa
 
-- zoom mínimo: `20.0`;
-- zoom máximo: `300.0`;
+- zoom mínimo: `0.0`;
+- zoom máximo: `1000.0`;
 - zoom inicial: `50.0`;
 - fator por passo: `0.88`;
 - altura da câmera: `40.0`;
@@ -50,11 +50,12 @@ Não entram no recurso central:
 
 ### Streaming do mapa
 
-- escala linear da área pré-carregada: `10.0`;
-- margem fixa de carregamento: `1` setor;
-- margem adicional de descarregamento: `1` setor;
+- escala máxima da área pré-carregada no zoom máximo: `10.0`;
+- margem fixa de carregamento: `0` setores;
+- margem adicional de descarregamento: `0` setores;
+- limite de coordenadas aguardando na fila: `256`;
 - proporção mínima de viewport: `0.25`;
-- proporção máxima de viewport: `4.0`;
+- proporção máxima de viewport: `1.0`;
 - setores processados por frame: `2`.
 
 ### Universo procedural

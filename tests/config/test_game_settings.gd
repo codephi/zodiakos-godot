@@ -15,6 +15,7 @@ func run() -> void:
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
 	assert_equal(Settings.stream_render_scale, 10.0, "stream render scale")
+	assert_equal(Settings.stream_max_pending_sectors, 256, "stream pending cap")
 	assert_equal(Settings.stream_load_margin, 0, "stream uses exact rounded coverage")
 	assert_equal(Settings.stream_unload_margin, 0, "near zoom releases distant sectors")
 	assert_equal(Settings.stream_max_aspect_ratio, 1.0, "stream maximum aspect")
@@ -90,7 +91,22 @@ func run() -> void:
 	_assert_validation_error(
 		&"stream_render_scale",
 		0.99,
-		"stream_render_scale must be at least 1"
+		"stream_render_scale must be finite and at least 1"
+	)
+	_assert_validation_error(
+		&"stream_render_scale",
+		NAN,
+		"stream_render_scale must be finite and at least 1"
+	)
+	_assert_validation_error(
+		&"stream_render_scale",
+		INF,
+		"stream_render_scale must be finite and at least 1"
+	)
+	_assert_validation_error(
+		&"stream_max_pending_sectors",
+		0,
+		"stream_max_pending_sectors must be positive"
 	)
 
 	var minimum_scale = Settings.duplicate(true)

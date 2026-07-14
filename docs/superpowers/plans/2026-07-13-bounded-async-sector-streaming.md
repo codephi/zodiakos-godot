@@ -25,7 +25,7 @@
 
 **Files:**
 - Create: `scripts/application/streaming/sector_request.gd`
-- Create: `scripts/application/streaming/sector_ring_iterator.gd`
+- Reuse: `scripts/application/streaming/sector_ring_iterator.gd`
 - Create: `scripts/application/streaming/sector_request_scheduler.gd`
 - Create: `tests/application/streaming/test_sector_request_scheduler.gd`
 - Modify: `tests/test_runner.gd`
@@ -81,81 +81,17 @@ func _init(request_epoch: int, sector: SectorCoordinate, request_priority: int) 
     priority = request_priority
 ```
 
-- [ ] **Step 4: Implement a lazy ring iterator**
+- [ ] **Step 4: Reuse the existing lazy ring iterator**
 
-The iterator must emit the center, then each Chebyshev ring clockwise without
-allocating an Array for the full radius. It clips each coordinate to `radii` and
-returns `null` only after `radius > max(radii.x, radii.y)`:
+Use the existing `SectorRingIterator` as the scheduler's only coordinate source.
+Do not create another ring implementation or change its deterministic contract:
+increasing Chebyshev distance, then `y`, then `x`. It already clips rectangular
+radii, stores O(1) cursor state and returns `null` after exhaustion.
 
-```gdscript
-class_name SectorRingIterator
-extends RefCounted
-
-var _center: SectorCoordinate
-var _radii: Vector2i
-var _radius := 0
-var _edge := 0
-var _offset := 0
-var _center_emitted := false
-
-func _init(center: SectorCoordinate, radii: Vector2i) -> void:
-    assert(center != null and radii.x >= 0 and radii.y >= 0)
-    _center = center.offset(0, 0)
-    _radii = radii
-
-func next_coordinate():
-    if not _center_emitted:
-        _center_emitted = true
-        return _center.offset(0, 0)
-    while _radius <= maxi(_radii.x, _radii.y):
-        if _radius == 0:
-            _radius = 1
-            _edge = 0
-            _offset = 0
-        var candidate = _next_ring_coordinate()
-        if candidate != null and _inside(candidate): return candidate
-    return null
-```
-
-Implement `_next_ring_coordinate()` for top, right, bottom and left edges without
-duplicating corners. Tests must assert the exact first two rings.
-
-```gdscript
-func _next_ring_coordinate():
-    var r := _radius
-    var candidate
-    match _edge:
-        0:
-            candidate = _center.offset(-r + _offset, -r)
-            _offset += 1
-            if _offset > 2 * r: _advance_edge()
-        1:
-            candidate = _center.offset(r, -r + 1 + _offset)
-            _offset += 1
-            if _offset >= 2 * r: _advance_edge()
-        2:
-            candidate = _center.offset(r - 1 - _offset, r)
-            _offset += 1
-            if _offset >= 2 * r: _advance_edge()
-        _:
-            candidate = _center.offset(-r, r - 1 - _offset)
-            _offset += 1
-            if _offset >= 2 * r - 1:
-                _edge = 0
-                _offset = 0
-                _radius += 1
-    return candidate
-
-func _advance_edge() -> void:
-    _edge += 1
-    _offset = 0
-
-func _inside(candidate: SectorCoordinate) -> bool:
-    return (
-        absi(candidate.x - _center.x) <= _radii.x
-        and absi(candidate.y - _center.y) <= _radii.y
-    )
-```
+The scheduler may wrap coordinates with epoch and priority metadata, but must not
+allocate a complete coverage Array or alter iterator ordering. Extend the
+iterator's focused tests only if the scheduler needs a new general-purpose
+iterator contract.
 
 - [ ] **Step 5: Implement bounded refill**
 

@@ -10,6 +10,7 @@ camera_zoom_factor = 0.88
 camera_height = 40.0
 camera_drag_threshold_pixels = 4.0
 stream_initial_load_radii = Vector2i(2, 2)
+stream_max_pending_sectors = 256
 stream_render_scale = 10.0
 stream_load_margin = 0
 stream_unload_margin = 0
