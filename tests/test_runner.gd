@@ -19,6 +19,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/application/universe/test_load_galaxy_sector.gd"),
 	preload("res://tests/application/universe/test_load_system_composition.gd"),
 	preload("res://tests/application/projections/test_visible_sector_projection.gd"),
+	preload("res://tests/application/minimap/test_minimap_projection.gd"),
 	preload("res://tests/application/streaming/test_sector_ring_iterator.gd"),
 	preload("res://tests/application/streaming/test_prioritized_sector_iterator.gd"),
 	preload("res://tests/adapters/godot_view/test_map_camera_controller.gd"),

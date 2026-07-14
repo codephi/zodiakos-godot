@@ -66,6 +66,22 @@ const SYSTEM_MAX_MOONS_PER_PLANET_LIMIT := 3999
 @export var performance_metrics_enabled: bool
 @export var performance_metrics_sample_capacity: int
 
+@export_category("Minimap")
+@export var minimap_compact_size: Vector2
+@export var minimap_expanded_screen_ratio: float
+@export var minimap_initial_view_scale: float
+@export var minimap_zoom_factor: float
+@export var minimap_min_view_height: float
+@export var minimap_max_view_height: float
+@export var minimap_exact_sector_limit: int
+@export var minimap_cluster_sector_limit: int
+@export var minimap_query_sectors_per_frame: int
+@export var minimap_cluster_grid_resolution: int
+@export var minimap_density_grid_resolution: int
+@export var minimap_density_cells_per_frame: int
+@export var minimap_cache_sector_limit: int
+@export var minimap_query_debounce_seconds: float
+
 @export_category("Visual Palette")
 @export var neutral_owner_color: Color
 @export var ship_styles: Dictionary
@@ -124,6 +140,7 @@ func validation_errors() -> PackedStringArray:
 	_validate_galaxy(errors)
 	_validate_system_composition(errors)
 	_validate_performance_metrics(errors)
+	_validate_minimap(errors)
 	_validate_visuals(errors)
 	_validate_demo(errors)
 	return errors
@@ -254,6 +271,54 @@ func _validate_performance_metrics(errors: PackedStringArray) -> void:
 		"performance_metrics_sample_capacity",
 		performance_metrics_sample_capacity
 	)
+
+
+func _validate_minimap(errors: PackedStringArray) -> void:
+	if (
+		not is_finite(minimap_compact_size.x)
+		or not is_finite(minimap_compact_size.y)
+		or minimap_compact_size.x <= 0.0
+		or minimap_compact_size.y <= 0.0
+	):
+		errors.append("minimap_compact_size must contain finite positive values")
+	if (
+		not is_finite(minimap_expanded_screen_ratio)
+		or minimap_expanded_screen_ratio <= 0.0
+		or minimap_expanded_screen_ratio > 1.0
+	):
+		errors.append("minimap_expanded_screen_ratio must satisfy 0 < value <= 1")
+	if (
+		not is_finite(minimap_zoom_factor)
+		or minimap_zoom_factor <= 0.0
+		or minimap_zoom_factor >= 1.0
+	):
+		errors.append("minimap_zoom_factor must satisfy 0 < value < 1")
+	for field in [
+		["minimap_initial_view_scale", minimap_initial_view_scale],
+		["minimap_min_view_height", minimap_min_view_height],
+		["minimap_max_view_height", minimap_max_view_height],
+	]:
+		if not is_finite(field[1]) or field[1] <= 0.0:
+			errors.append("%s must be positive" % field[0])
+	if minimap_min_view_height > minimap_max_view_height:
+		errors.append("minimap view heights must satisfy minimum <= maximum")
+	for field in [
+		["minimap_exact_sector_limit", minimap_exact_sector_limit],
+		["minimap_cluster_sector_limit", minimap_cluster_sector_limit],
+		["minimap_query_sectors_per_frame", minimap_query_sectors_per_frame],
+		["minimap_cluster_grid_resolution", minimap_cluster_grid_resolution],
+		["minimap_density_grid_resolution", minimap_density_grid_resolution],
+		["minimap_density_cells_per_frame", minimap_density_cells_per_frame],
+		["minimap_cache_sector_limit", minimap_cache_sector_limit],
+	]:
+		_require_positive(errors, field[0], field[1])
+	if minimap_exact_sector_limit >= minimap_cluster_sector_limit:
+		errors.append("minimap sector limits must satisfy exact < cluster")
+	if (
+		not is_finite(minimap_query_debounce_seconds)
+		or minimap_query_debounce_seconds < 0.0
+	):
+		errors.append("minimap_query_debounce_seconds must be nonnegative")
 
 
 func _validate_visuals(errors: PackedStringArray) -> void:

@@ -47,6 +47,20 @@ func run() -> void:
 	assert_equal(Settings.system_max_minor_bodies, 8, "minor body cap")
 	assert_true(Settings.performance_metrics_enabled, "performance metrics enabled")
 	assert_equal(Settings.performance_metrics_sample_capacity, 240, "metrics sample capacity")
+	assert_equal(Settings.minimap_compact_size, Vector2(320.0, 220.0), "minimap compact size")
+	assert_equal(Settings.minimap_expanded_screen_ratio, 0.7, "minimap expanded ratio")
+	assert_equal(Settings.minimap_initial_view_scale, 9.0, "minimap initial scale")
+	assert_equal(Settings.minimap_zoom_factor, 0.8, "minimap zoom factor")
+	assert_equal(Settings.minimap_min_view_height, 40.0, "minimap minimum height")
+	assert_equal(Settings.minimap_max_view_height, 120000.0, "minimap maximum height")
+	assert_equal(Settings.minimap_exact_sector_limit, 256, "minimap exact limit")
+	assert_equal(Settings.minimap_cluster_sector_limit, 4096, "minimap cluster limit")
+	assert_equal(Settings.minimap_query_sectors_per_frame, 8, "minimap sector budget")
+	assert_equal(Settings.minimap_cluster_grid_resolution, 24, "minimap cluster resolution")
+	assert_equal(Settings.minimap_density_grid_resolution, 64, "minimap density resolution")
+	assert_equal(Settings.minimap_density_cells_per_frame, 128, "minimap cell budget")
+	assert_equal(Settings.minimap_cache_sector_limit, 512, "minimap cache limit")
+	assert_equal(Settings.minimap_query_debounce_seconds, 0.1, "minimap debounce")
 	assert_equal(
 		Settings.system_planet_types,
 		[&"rocky", &"gas", &"ice", &"volcanic"],
@@ -234,6 +248,34 @@ func run() -> void:
 		&"performance_metrics_sample_capacity",
 		0,
 		"performance_metrics_sample_capacity must be positive"
+	)
+	_assert_validation_error(
+		&"minimap_expanded_screen_ratio",
+		1.01,
+		"minimap_expanded_screen_ratio must satisfy 0 < value <= 1"
+	)
+	_assert_validation_error(
+		&"minimap_zoom_factor",
+		1.0,
+		"minimap_zoom_factor must satisfy 0 < value < 1"
+	)
+	_assert_validation_error(
+		&"minimap_query_sectors_per_frame",
+		0,
+		"minimap_query_sectors_per_frame must be positive"
+	)
+	_assert_validation_error(
+		&"minimap_query_debounce_seconds",
+		NAN,
+		"minimap_query_debounce_seconds must be nonnegative"
+	)
+	var invalid_minimap_order = Settings.duplicate(true)
+	invalid_minimap_order.minimap_exact_sector_limit = 4096
+	assert_true(
+		invalid_minimap_order.validation_errors().has(
+			"minimap sector limits must satisfy exact < cluster"
+		),
+		"minimap exact threshold remains below cluster threshold"
 	)
 
 	_assert_planet_type_validation(
