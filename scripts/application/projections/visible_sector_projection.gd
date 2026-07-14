@@ -11,16 +11,22 @@ func _init(configuration = DefaultSettings) -> void:
 
 
 func load_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
-	var half_height := maxf(orthographic_size, 0.0) * 0.5
+	var scaled_half_height: float = (
+		maxf(orthographic_size, 0.0)
+		* 0.5
+		* settings.stream_render_scale
+	)
 	var safe_aspect_ratio := clampf(
 		aspect_ratio,
 		settings.stream_min_aspect_ratio,
 		settings.stream_max_aspect_ratio
 	)
-	var half_width := half_height * safe_aspect_ratio
+	var scaled_half_width: float = scaled_half_height * safe_aspect_ratio
 	return Vector2i(
-		ceili(half_width / settings.universe_sector_size) + settings.stream_load_margin,
-		ceili(half_height / settings.universe_sector_size) + settings.stream_load_margin
+		ceili(scaled_half_width / settings.universe_sector_size)
+			+ settings.stream_load_margin,
+		ceili(scaled_half_height / settings.universe_sector_size)
+			+ settings.stream_load_margin
 	)
 
 

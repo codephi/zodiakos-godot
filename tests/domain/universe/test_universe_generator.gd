@@ -28,6 +28,7 @@ class FakeRepository extends ScientificCatalogRepository:
 func run() -> void:
 	_test_universe_identity_is_stable_and_versioned()
 	_test_every_output_setting_versions_the_identity()
+	_test_stream_render_scale_does_not_version_universe()
 	_test_procedural_candidates_are_deterministic_and_bounded()
 	_test_candidate_generation_does_not_touch_global_random_state()
 	_test_candidate_owner_is_defensively_copied()
@@ -105,6 +106,18 @@ func _test_every_output_setting_versions_the_identity() -> void:
 			baseline != Identity.new(101, 7, Metadata.new(1, 2, 3), changed).value,
 			"%s versions identity" % field
 		)
+
+
+func _test_stream_render_scale_does_not_version_universe() -> void:
+	var metadata = Metadata.new(1, 2, 3)
+	var baseline = Identity.new(101, 7, metadata, Settings).value
+	var changed = Settings.duplicate(true)
+	changed.stream_render_scale = 2.0
+	assert_equal(
+		Identity.new(101, 7, metadata, changed).value,
+		baseline,
+		"presentation render scale stays outside universe identity"
+	)
 
 
 func _test_procedural_candidates_are_deterministic_and_bounded() -> void:

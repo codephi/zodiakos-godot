@@ -14,7 +14,8 @@ func run() -> void:
 	assert_equal(Settings.camera_initial_zoom, 50.0, "camera initial zoom")
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
-	assert_equal(Settings.stream_load_margin, 10, "stream preloads ten sector rings")
+	assert_equal(Settings.stream_render_scale, 10.0, "stream render scale")
+	assert_equal(Settings.stream_load_margin, 1, "stream keeps one safety ring")
 	assert_equal(Settings.universe_global_seed, 0x5A4F4449414B4F53, "global seed")
 	assert_equal(Settings.universe_sector_size, 40.0, "sector size")
 	assert_equal(Settings.galaxy_disk_radius_pc, 50000.0, "disk radius")
@@ -84,6 +85,15 @@ func run() -> void:
 		-0.01,
 		"camera_min_zoom must be nonnegative"
 	)
+	_assert_validation_error(
+		&"stream_render_scale",
+		0.99,
+		"stream_render_scale must be at least 1"
+	)
+
+	var minimum_scale = Settings.duplicate(true)
+	minimum_scale.stream_render_scale = 1.0
+	assert_true(minimum_scale.is_valid(), "render scale one remains valid")
 	_assert_validation_error(
 		"galaxy_disk_scale_length_pc",
 		0.0,

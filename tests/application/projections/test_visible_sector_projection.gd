@@ -10,28 +10,33 @@ func run() -> void:
 	var center = Coordinate.new(4, -2)
 	assert_equal(
 		projection.load_radii(300.0, 16.0 / 9.0),
-		Vector2i(17, 14),
-		"reference zoom covers 16:9 viewport plus ten sector rings"
+		Vector2i(68, 39),
+		"render scale expands both 16:9 dimensions before rounding"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 9.0 / 16.0),
-		Vector2i(13, 14),
-		"portrait coverage follows the visible width"
+		Vector2i(23, 39),
+		"portrait scale follows visible width"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 32.0 / 9.0),
-		Vector2i(24, 14),
-		"ultrawide coverage follows the visible width"
+		Vector2i(135, 39),
+		"ultrawide scale follows visible width"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1920.0),
-		Vector2i(25, 14),
-		"degenerate wide viewports clamp to a safe coverage"
+		Vector2i(151, 39),
+		"degenerate wide viewport clamps before scaling"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1.0 / 1920.0),
-		Vector2i(11, 14),
-		"degenerate tall viewports retain safe horizontal coverage"
+		Vector2i(11, 39),
+		"degenerate tall viewport retains scaled horizontal coverage"
+	)
+	assert_equal(
+		projection.load_radii(500.0, 1.0),
+		Vector2i(64, 64),
+		"five-hundred square expands to at least five thousand square"
 	)
 	var maximum_order = projection.load_order(center, {}, {}, Vector2i(8, 5))
 	assert_equal(
@@ -87,6 +92,7 @@ func run() -> void:
 
 	var custom = Settings.duplicate(true)
 	custom.universe_sector_size = 100.0
+	custom.stream_render_scale = 1.0
 	custom.stream_load_margin = 2
 	custom.stream_unload_margin = 4
 	custom.stream_min_aspect_ratio = 0.5

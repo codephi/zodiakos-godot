@@ -275,14 +275,14 @@ func _test_view_update_reconciles_even_when_radii_are_unchanged() -> void:
 func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> void:
 	var generator = CountingGenerator.new()
 	var view = View.new()
-	var controller = Controller.new()
+	var controller = Controller.new(_unscaled_stream_settings())
 	var origin = PositionType.new(Coordinate.new(), Vector2.ZERO)
 	controller.configure(generator, view, origin)
 	controller.update_view(300.0, Vector2(1920.0, 1080.0))
 	controller.process_pending(controller.pending.size())
 	assert_equal(
 		view.active_sector_count(),
-		1015,
+		187,
 		"maximum zoom fills rectangular visible coverage"
 	)
 	var calls_at_maximum: Dictionary = generator.calls_by_sector.duplicate()
@@ -296,7 +296,7 @@ func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> 
 	controller.update_view(50.0, Vector2(1920.0, 1080.0))
 	controller.process_pending(controller.pending.size())
 	assert_true(
-		view.active_sector_count() <= 675,
+		view.active_sector_count() <= 63,
 		"zooming in unloads sectors outside hysteresis"
 	)
 	controller.free()
@@ -306,7 +306,7 @@ func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> 
 func _test_non_positive_viewport_width_is_ignored() -> void:
 	var generator = CountingGenerator.new()
 	var view = View.new()
-	var controller = Controller.new()
+	var controller = Controller.new(_unscaled_stream_settings())
 	controller.configure(
 		generator,
 		view,
@@ -346,7 +346,7 @@ func _test_non_positive_viewport_width_is_ignored() -> void:
 
 
 func _test_extreme_positive_viewport_is_safely_bounded() -> void:
-	var controller = Controller.new()
+	var controller = Controller.new(_unscaled_stream_settings())
 	var view = View.new()
 	controller.configure(
 		Generator.new(FakeRepository.new()),
@@ -356,13 +356,13 @@ func _test_extreme_positive_viewport_is_safely_bounded() -> void:
 	controller.update_view(300.0, Vector2(1920.0, 1.0))
 	assert_equal(
 		controller.load_radii,
-		Vector2i(25, 14),
+		Vector2i(16, 5),
 		"one-pixel viewport height cannot create an unbounded stream"
 	)
 	assert_equal(
 		controller.pending.size(),
-		1479,
-		"bounded extreme coverage queues at most 51 by 29 sectors"
+		363,
+		"bounded extreme coverage queues at most 33 by 11 sectors"
 	)
 	controller.free()
 	view.free()
@@ -406,6 +406,13 @@ func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
 		"invalid visual type reuses the canonical fallback material"
 	)
 	view.free()
+
+
+func _unscaled_stream_settings():
+	var custom = Settings.duplicate(true)
+	custom.stream_render_scale = 1.0
+	custom.stream_load_margin = 1
+	return custom
 
 
 func _test_stream_uses_injected_settings() -> void:
