@@ -61,6 +61,7 @@ func update_view(orthographic_size: float, viewport_size: Vector2) -> void:
 		visible_radii = next_visible
 		load_radii = next_load
 		unload_radii = projection.unload_radii(load_radii)
+	_trim_pending_to_limit()
 	_reconcile_stream(coverage_changed)
 
 
@@ -98,6 +99,20 @@ func _refill_pending() -> void:
 			continue
 		pending.append(coordinate)
 		queued[key] = true
+
+
+func _trim_pending_to_limit() -> void:
+	while pending.size() > settings.stream_max_pending_sectors:
+		var removed = pending.pop_back()
+		queued.erase(removed.key())
+
+
+func pending_sector_count() -> int:
+	return pending.size()
+
+
+func target_sector_count() -> int:
+	return (2 * load_radii.x + 1) * (2 * load_radii.y + 1)
 
 
 func _process(_delta: float) -> void:

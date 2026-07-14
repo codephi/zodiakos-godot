@@ -90,6 +90,7 @@ func run() -> void:
 	_test_visible_sectors_materialize_before_external_preload()
 	_test_large_projection_uses_bounded_lazy_pending()
 	_test_injected_pending_cap_and_zero_processing_limit()
+	_test_runtime_budget_changes_reconcile_immediately()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
 	_test_near_zoom_releases_distant_preloaded_sectors()
 	_test_non_positive_viewport_width_is_ignored()
@@ -359,6 +360,44 @@ func _test_injected_pending_cap_and_zero_processing_limit() -> void:
 	controller.process_pending(0)
 	assert_equal(view.active_sector_count(), 0, "zero limit generates nothing")
 	assert_equal(controller.pending.size(), 7, "zero limit retains bounded window")
+	controller.free()
+	view.free()
+
+
+func _test_runtime_budget_changes_reconcile_immediately() -> void:
+	var custom = Settings.duplicate(true)
+	custom.stream_use_fixed_preload_zoom = false
+	custom.stream_viewport_grid_size = 3
+	custom.stream_load_margin = 0
+	custom.stream_unload_margin = 0
+	custom.stream_max_aspect_ratio = 4.0
+	custom.stream_max_pending_sectors = 32
+	var controller = Controller.new(custom)
+	var view = View.new(custom)
+	controller.configure(
+		Generator.new(FakeRepository.new(), custom),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	controller.update_view(100.0, Vector2(1920.0, 1080.0))
+	assert_equal(controller.pending.size(), 32, "initial runtime cap fills pending")
+
+	custom.stream_max_pending_sectors = 7
+	controller.update_view(100.0, Vector2(1920.0, 1080.0))
+	assert_equal(
+		controller.pending_sector_count(),
+		7,
+		"runtime cap trims pending immediately"
+	)
+	assert_equal(
+		controller.pending.size(),
+		controller.queued.size(),
+		"trim keeps queue keys synchronized"
+	)
+	assert_equal(controller.target_sector_count(), 135, "target count reflects load radii")
+	custom.stream_sectors_per_frame = 0
+	controller.process_pending()
+	assert_equal(view.active_sector_count(), 0, "zero runtime frame budget pauses materialization")
 	controller.free()
 	view.free()
 
