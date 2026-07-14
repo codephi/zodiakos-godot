@@ -43,6 +43,7 @@ O campo de escala adaptativa será substituído por:
 Valor de produção:
 
 ```text
+camera_max_zoom = 100.0
 stream_viewport_grid_size = 3
 ```
 
@@ -96,20 +97,20 @@ permanecem inalterados nesta mudança. O objetivo desta fase é corrigir a área
 final solicitada; otimizações adicionais de vazão poderão ser medidas depois
 sobre a cobertura correta.
 
-## Exemplo no zoom 1000
+## Exemplo no zoom máximo de produção
 
-Com viewport `1920 × 1080`, zoom `1000`, setor de tamanho `40` e margem zero:
+Com viewport `1920 × 1080`, zoom `100`, setor de tamanho `40` e margem zero:
 
 - proporção: `16:9`;
-- raios visíveis: `(23, 13)`;
-- setores da tela central: `47 × 27 = 1.269`;
-- raios carregados: `(67, 38)`;
-- cobertura carregada: `135 × 77 = 10.395` setores.
+- raios visíveis: `(3, 2)`;
+- setores da tela central: `7 × 5 = 35`;
+- raios carregados: `(7, 4)`;
+- cobertura carregada: `15 × 9 = 135` setores.
 
-O modelo anterior solicitava `63.001` setores porque aplicava escala linear
-`10` sobre uma área limitada artificialmente a uma proporção quadrada. A nova
-cobertura reduz esse alvo em aproximadamente `83,5%` e representa corretamente
-o grid de telas.
+O modelo anterior chegava a solicitar `63.001` setores no antigo zoom `1000`
+porque aplicava escala linear `10` sobre uma área limitada artificialmente a
+uma proporção quadrada. A nova configuração de produção limita o zoom a `100`
+e representa corretamente o grid de telas.
 
 ## Componentes afetados
 
@@ -152,8 +153,8 @@ existentes.
 
 ### Projeção
 
-- zoom `1000` e aspecto `16:9` produzem raios visíveis `(23, 13)`;
-- o mesmo cenário produz raios carregados `(67, 38)`;
+- zoom `100` e aspecto `16:9` produzem raios visíveis `(3, 2)`;
+- o mesmo cenário produz raios carregados `(7, 4)`;
 - zooms diferentes preservam a relação de três viewports por eixo antes do
   arredondamento;
 - grid `1` iguala os dois raios;
@@ -173,7 +174,7 @@ existentes.
 - A cobertura representa uma tela central e oito telas vizinhas.
 - Largura e altura carregadas equivalem a três viewports antes do arredondamento
   para setores.
-- Zoom `1000` em `1920 × 1080` solicita `10.395`, não `63.001`, setores.
+- Zoom máximo `100` em `1920 × 1080` solicita `135` setores.
 - A área visível é carregada antes do preload.
 - Configuração, projeção, streaming, suíte completa, catálogo e smoke headless
   passam sem erros.
