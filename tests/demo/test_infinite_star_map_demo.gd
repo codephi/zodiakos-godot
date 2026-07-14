@@ -44,6 +44,7 @@ func run() -> void:
 	_test_reference_zoom_refreshes_stream_coverage()
 	_test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage()
 	_test_maximum_zoom_routes_fixed_grid_coverage()
+	_test_runtime_stream_tuning_is_temporary_and_resettable()
 
 
 func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> void:
@@ -55,6 +56,10 @@ func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> vo
 	assert_true(stream != null, "stream controller exists")
 	assert_true(sector_root != null, "sector root exists")
 	assert_true(demo.get_node_or_null("DebugHud/Stats") != null, "debug HUD exists")
+	assert_true(
+		demo.get_node_or_null("DebugHud/StreamingDebugPanel") != null,
+		"streaming debug panel exists"
+	)
 	assert_equal(
 		demo.get_node("WorldEnvironment").environment.background_color,
 		Settings.map_background_color,
@@ -160,6 +165,66 @@ func _test_maximum_zoom_routes_fixed_grid_coverage() -> void:
 	demo._refresh_stream_coverage(Vector2(1920.0, 1080.0))
 	assert_equal(stream.load_radii, Vector2i(7, 4), "demo routes max zoom radii")
 	assert_equal(stream.pending.size(), 135, "demo queues the complete nine viewport grid")
+	demo.free()
+
+
+func _test_runtime_stream_tuning_is_temporary_and_resettable() -> void:
+	var original_fixed: bool = Settings.stream_use_fixed_preload_zoom
+	var original_fixed_zoom: float = Settings.stream_fixed_preload_zoom
+	var original_grid: int = Settings.stream_viewport_grid_size
+	var demo = Demo.instantiate()
+	assert_true(demo.runtime_settings != Settings, "demo uses a runtime settings copy")
+	assert_true(
+		demo.map_camera.settings == demo.runtime_settings,
+		"camera shares runtime settings"
+	)
+	assert_true(demo.stream.settings == demo.runtime_settings, "stream shares runtime settings")
+	assert_true(
+		demo.sector_view.settings == demo.runtime_settings,
+		"view shares runtime settings"
+	)
+	demo._apply_stream_tuning(true, 1000.0, 3, 0, 7)
+	demo._refresh_stream_coverage(Vector2(1920.0, 1080.0))
+	assert_equal(demo.stream.load_radii, Vector2i(67, 38), "panel tuning changes coverage")
+	assert_equal(demo.stream.pending_sector_count(), 7, "panel tuning changes pending cap")
+	assert_equal(
+		Settings.stream_use_fixed_preload_zoom,
+		original_fixed,
+		"source fixed mode is untouched"
+	)
+	assert_equal(
+		Settings.stream_fixed_preload_zoom,
+		original_fixed_zoom,
+		"source fixed zoom is untouched"
+	)
+	assert_equal(Settings.stream_viewport_grid_size, original_grid, "source grid is untouched")
+	assert_true(
+		demo.debug_panel.metrics_label.text.contains("Preload zoom: 1000.0"),
+		"panel shows applied preload zoom"
+	)
+	assert_true(
+		demo.debug_panel.metrics_label.text.contains("Target: 10395"),
+		"panel shows applied target"
+	)
+
+	demo._apply_stream_tuning(true, 1000.0, 2, 2, 256)
+	assert_equal(
+		demo.runtime_settings.stream_viewport_grid_size,
+		3,
+		"invalid tuning preserves the last valid grid"
+	)
+	assert_true(not demo.debug_panel.error_label.text.is_empty(), "invalid tuning reports an error")
+	demo._reset_stream_tuning()
+	assert_equal(
+		demo.runtime_settings.stream_use_fixed_preload_zoom,
+		demo.session_default_settings.stream_use_fixed_preload_zoom,
+		"reset restores session fixed mode"
+	)
+	assert_equal(
+		demo.runtime_settings.stream_viewport_grid_size,
+		demo.session_default_settings.stream_viewport_grid_size,
+		"reset restores session grid"
+	)
 	demo.free()
 
 

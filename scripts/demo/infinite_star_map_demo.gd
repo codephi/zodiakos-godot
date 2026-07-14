@@ -3,6 +3,9 @@ extends Node3D
 const CameraType = preload("res://scripts/adapters/godot_view/map_camera_controller.gd")
 const ViewType = preload("res://scripts/adapters/godot_view/star_field_view.gd")
 const StreamType = preload("res://scripts/adapters/godot_view/sector_stream_controller.gd")
+const StreamingDebugPanelType = preload(
+	"res://scripts/adapters/godot_view/streaming_debug_panel.gd"
+)
 const Generator = preload("res://scripts/domain/universe/universe_generator.gd")
 const LoadGalaxySector = preload(
 	"res://scripts/application/universe/load_galaxy_sector.gd"
@@ -29,12 +32,15 @@ const LoadSystemComposition = preload(
 const ProceduralSystemFactory = preload(
 	"res://scripts/domain/universe/procedural_system_factory.gd"
 )
-const Settings = preload("res://config/game_settings.tres")
+const DefaultSettings = preload("res://config/game_settings.tres")
 
 var stats_label: Label
+var debug_panel
 var map_camera
 var sector_view
 var stream
+var runtime_settings
+var session_default_settings
 var catalog_repository
 var composition_metrics
 var composition_loader
@@ -44,21 +50,23 @@ var _composition_metrics_formatter
 
 func _init(repository_override = null) -> void:
 	_repository_override = repository_override
-	map_camera = CameraType.new(Settings)
+	runtime_settings = DefaultSettings.duplicate(true)
+	session_default_settings = runtime_settings.duplicate(true)
+	map_camera = CameraType.new(runtime_settings)
 	map_camera.name = "MapCamera"
 	add_child(map_camera)
 
-	sector_view = ViewType.new(Settings)
+	sector_view = ViewType.new(runtime_settings)
 	sector_view.name = "SectorRoot"
 	add_child(sector_view)
 
-	stream = StreamType.new(Settings)
+	stream = StreamType.new(runtime_settings)
 	stream.name = "SectorStreamController"
 	add_child(stream)
 
 	composition_metrics = CompositionMetrics.new(
-		Settings.performance_metrics_enabled,
-		Settings.performance_metrics_sample_capacity
+		runtime_settings.performance_metrics_enabled,
+		runtime_settings.performance_metrics_sample_capacity
 	)
 	_composition_metrics_formatter = CompositionMetricsFormatter.new()
 	_add_environment()
@@ -82,10 +90,10 @@ func _add_environment() -> void:
 	world.name = "WorldEnvironment"
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Settings.map_background_color
+	environment.background_color = runtime_settings.map_background_color
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Settings.map_ambient_light_color
-	environment.ambient_light_energy = Settings.map_ambient_light_energy
+	environment.ambient_light_color = runtime_settings.map_ambient_light_color
+	environment.ambient_light_energy = runtime_settings.map_ambient_light_energy
 	world.environment = environment
 	add_child(world)
 
@@ -98,6 +106,11 @@ func _add_hud() -> void:
 	stats_label.name = "Stats"
 	stats_label.position = Vector2(16, 16)
 	layer.add_child(stats_label)
+	debug_panel = StreamingDebugPanelType.new()
+	layer.add_child(debug_panel)
+	debug_panel.configure(runtime_settings)
+	debug_panel.tuning_changed.connect(_apply_stream_tuning)
+	debug_panel.reset_requested.connect(_reset_stream_tuning)
 
 
 func _configure_universe_stream() -> void:
@@ -113,7 +126,7 @@ func _configure_universe_stream() -> void:
 		_show_catalog_error(_validation_message(validation))
 		_close_catalog_repository()
 		return
-	var generator = Generator.new(catalog_repository, Settings)
+	var generator = Generator.new(catalog_repository, runtime_settings)
 	if generator.identity == null:
 		_show_catalog_error("Scientific catalog metadata is unavailable")
 		_close_catalog_repository()
@@ -129,7 +142,7 @@ func _configure_universe_stream() -> void:
 		UniversePositionType.new(
 			Coordinate.new(203, 0),
 			Vector2(30.0, 0.0),
-			Settings.universe_sector_size
+			runtime_settings.universe_sector_size
 		)
 	)
 	stream.configure(sector_source, sector_view, map_camera.logical_position)
@@ -163,12 +176,19 @@ func _exit_tree() -> void:
 func _update_stats(sectors: int, systems: int, center_key: String) -> void:
 	var map_text := (
 		"Seed: 0x%X\nSector: %s\nActive: %d\nSystems: %d\nZoom: %.1f"
-		% [Settings.universe_global_seed, center_key, sectors, systems, map_camera.size]
+		% [
+			runtime_settings.universe_global_seed,
+			center_key,
+			sectors,
+			systems,
+			map_camera.size,
+		]
 	)
 	var metrics_text: String = _composition_metrics_formatter.format(
 		composition_metrics.snapshot()
 	)
 	stats_label.text = map_text if metrics_text.is_empty() else map_text + "\n" + metrics_text
+	_refresh_stream_debug_metrics()
 
 
 func refresh_debug_hud() -> void:
@@ -202,3 +222,61 @@ func _refresh_stream_coverage(viewport_size := Vector2.ZERO) -> void:
 			viewport = Engine.get_main_loop().root
 		next_viewport_size = viewport.get_visible_rect().size
 	stream.update_view(map_camera.size, next_viewport_size)
+	_refresh_stream_debug_metrics()
+
+
+func _apply_stream_tuning(
+	use_fixed: bool,
+	fixed_zoom: float,
+	grid_size: int,
+	sectors_per_frame: int,
+	max_pending: int
+) -> void:
+	var candidate = runtime_settings.duplicate(true)
+	candidate.stream_use_fixed_preload_zoom = use_fixed
+	candidate.stream_fixed_preload_zoom = fixed_zoom
+	candidate.stream_viewport_grid_size = grid_size
+	candidate.stream_sectors_per_frame = sectors_per_frame
+	candidate.stream_max_pending_sectors = max_pending
+	var errors: PackedStringArray = candidate.validation_errors()
+	if not errors.is_empty():
+		debug_panel.show_validation_error(errors[0])
+		return
+	_copy_stream_tuning(candidate, runtime_settings)
+	debug_panel.configure(runtime_settings)
+	debug_panel.show_validation_error("")
+	_refresh_stream_coverage()
+	refresh_debug_hud()
+
+
+func _reset_stream_tuning() -> void:
+	_copy_stream_tuning(session_default_settings, runtime_settings)
+	debug_panel.configure(runtime_settings)
+	debug_panel.show_validation_error("")
+	_refresh_stream_coverage()
+	refresh_debug_hud()
+
+
+func _copy_stream_tuning(source, target) -> void:
+	target.stream_use_fixed_preload_zoom = source.stream_use_fixed_preload_zoom
+	target.stream_fixed_preload_zoom = source.stream_fixed_preload_zoom
+	target.stream_viewport_grid_size = source.stream_viewport_grid_size
+	target.stream_sectors_per_frame = source.stream_sectors_per_frame
+	target.stream_max_pending_sectors = source.stream_max_pending_sectors
+
+
+func _refresh_stream_debug_metrics() -> void:
+	if debug_panel == null or stream == null or sector_view == null:
+		return
+	debug_panel.update_metrics({
+		"camera_zoom": map_camera.size,
+		"effective_preload_zoom": stream.projection.effective_preload_zoom(
+			map_camera.size
+		),
+		"visible_radii": stream.visible_radii,
+		"load_radii": stream.load_radii,
+		"target_sectors": stream.target_sector_count(),
+		"active_sectors": sector_view.active_sector_count(),
+		"pending_sectors": stream.pending_sector_count(),
+		"systems": sector_view.system_count(),
+	})
