@@ -116,7 +116,7 @@ Controles:
 - `Preload fixo`: `CheckBox`;
 - `Zoom de preload`: `SpinBox` finito e não negativo;
 - `Grid de viewports`: `SpinBox` com mínimo 1, passo 2 e valores ímpares;
-- `Setores por frame`: `SpinBox` inteiro positivo;
+- `Setores por frame`: `SpinBox` inteiro não negativo, permitindo `0`;
 - `Máximo na fila`: `SpinBox` inteiro positivo;
 - `Restaurar padrões`: botão.
 
