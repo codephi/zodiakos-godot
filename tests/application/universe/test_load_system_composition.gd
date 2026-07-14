@@ -8,6 +8,9 @@ const LoadSystemComposition = preload(
 	"res://scripts/application/universe/load_system_composition.gd"
 )
 const Metadata = preload("res://scripts/domain/catalog/catalog_metadata.gd")
+const Metrics = preload(
+	"res://scripts/application/performance/system_composition_metrics.gd"
+)
 const Settings = preload("res://config/game_settings.tres")
 const System = preload("res://scripts/domain/universe/stellar_system_definition.gd")
 
@@ -50,6 +53,8 @@ func run() -> void:
 	_test_procedural_routes_only_to_factory()
 	_test_missing_catalog_does_not_fall_back_to_procedural()
 	_test_unknown_source_returns_null_without_calls()
+	_test_records_real_success_by_source()
+	_test_records_failure_without_duration()
 
 
 func _test_catalog_routes_only_to_repository() -> void:
@@ -105,6 +110,45 @@ func _test_unknown_source_returns_null_without_calls() -> void:
 	)
 	assert_equal(repository.requested_ids.size(), 0, "unknown source skips repository")
 	assert_equal(factory.requested_systems.size(), 0, "unknown source skips factory")
+
+
+func _test_records_real_success_by_source() -> void:
+	var metrics = Metrics.new(true, 240)
+	var catalog_loader = LoadSystemComposition.new(
+		RepositorySpy.new(_composition(&"catalog:timed")),
+		FactorySpy.new(_composition(&"proc:unused")),
+		_identity(),
+		metrics
+	)
+	catalog_loader.execute(_system(&"catalog:timed", &"catalog"))
+	var procedural_loader = LoadSystemComposition.new(
+		RepositorySpy.new(_composition(&"catalog:unused")),
+		FactorySpy.new(_composition(&"proc:timed")),
+		_identity(),
+		metrics
+	)
+	procedural_loader.execute(_system(&"proc:timed", &"procedural"))
+	var data: Dictionary = metrics.snapshot()
+	assert_equal(data.catalog.count, 1, "catalog execution measured once")
+	assert_equal(data.procedural.count, 1, "procedural execution measured once")
+	assert_true(data.catalog.average_ms >= 0.0, "catalog duration is nonnegative")
+	assert_true(data.procedural.average_ms >= 0.0, "procedural duration is nonnegative")
+
+
+func _test_records_failure_without_duration() -> void:
+	var metrics = Metrics.new(true, 240)
+	var loader = LoadSystemComposition.new(
+		RepositorySpy.new(null),
+		FactorySpy.new(_composition(&"proc:unused")),
+		_identity(),
+		metrics
+	)
+	loader.execute(_system(&"catalog:missing", &"catalog"))
+	loader.execute(_system(&"external:unknown", &"external"))
+	var data: Dictionary = metrics.snapshot()
+	assert_equal(data.catalog.count, 0, "failure has no duration")
+	assert_equal(data.catalog.failures, 1, "known source failure counted")
+	assert_equal(data.procedural.failures, 0, "unknown source changes nothing")
 
 
 func _composition(system_id: StringName) -> StellarSystemComposition:
