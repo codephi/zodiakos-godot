@@ -23,6 +23,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/application/streaming/test_prioritized_sector_iterator.gd"),
 	preload("res://tests/adapters/godot_view/test_map_camera_controller.gd"),
 	preload("res://tests/adapters/godot_view/test_sector_streaming.gd"),
+	preload("res://tests/adapters/godot_view/test_streaming_debug_panel.gd"),
 	preload("res://tests/adapters/godot_view/test_system_composition_metrics_formatter.gd"),
 	preload("res://tests/visuals/test_visual_palette.gd"),
 	preload("res://tests/visuals/test_geometric_components.gd"),
