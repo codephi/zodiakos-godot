@@ -403,8 +403,8 @@ Replace iterator construction with:
 ```powershell
 ./tools/run_godot_tests.ps1 -Suite 'res://tests/adapters/godot_view/test_sector_streaming.gd'
 ./tools/run_godot_tests.ps1
-./tools/validate_catalog.ps1
-./tools/run_godot_smoke.ps1
+./tools/run_godot_tests.ps1 -RunnerScript 'res://tools/catalog/validate_catalog.gd'
+& "$env:LOCALAPPDATA\Programs\Godot\4.7\godot_console.exe" --headless --path . --quit-after 20
 ```
 
 Expected: every command exits 0; test commands print `TESTS PASSED`, catalog validation reports success, and smoke exits without script errors.
