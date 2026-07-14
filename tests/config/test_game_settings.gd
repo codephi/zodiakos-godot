@@ -10,15 +10,15 @@ func run() -> void:
 		"central settings use the typed resource"
 	)
 	assert_equal(Settings.camera_min_zoom, 0.0, "camera minimum zoom")
-	assert_equal(Settings.camera_max_zoom, 1000.0, "camera maximum zoom")
+	assert_equal(Settings.camera_max_zoom, 100.0, "camera maximum zoom")
 	assert_equal(Settings.camera_initial_zoom, 50.0, "camera initial zoom")
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
-	assert_equal(Settings.stream_render_scale, 10.0, "stream render scale")
+	assert_equal(Settings.stream_viewport_grid_size, 3, "stream viewport grid size")
 	assert_equal(Settings.stream_max_pending_sectors, 256, "stream pending cap")
 	assert_equal(Settings.stream_load_margin, 0, "stream uses exact rounded coverage")
 	assert_equal(Settings.stream_unload_margin, 0, "near zoom releases distant sectors")
-	assert_equal(Settings.stream_max_aspect_ratio, 1.0, "stream maximum aspect")
+	assert_equal(Settings.stream_max_aspect_ratio, 4.0, "stream maximum aspect")
 	assert_equal(Settings.universe_global_seed, 0x5A4F4449414B4F53, "global seed")
 	assert_equal(Settings.universe_sector_size, 40.0, "sector size")
 	assert_equal(Settings.galaxy_disk_radius_pc, 50000.0, "disk radius")
@@ -89,19 +89,14 @@ func run() -> void:
 		"camera_min_zoom must be nonnegative"
 	)
 	_assert_validation_error(
-		&"stream_render_scale",
-		0.99,
-		"stream_render_scale must be finite and at least 1"
+		&"stream_viewport_grid_size",
+		0,
+		"stream_viewport_grid_size must be positive"
 	)
 	_assert_validation_error(
-		&"stream_render_scale",
-		NAN,
-		"stream_render_scale must be finite and at least 1"
-	)
-	_assert_validation_error(
-		&"stream_render_scale",
-		INF,
-		"stream_render_scale must be finite and at least 1"
+		&"stream_viewport_grid_size",
+		2,
+		"stream_viewport_grid_size must be odd"
 	)
 	_assert_validation_error(
 		&"stream_max_pending_sectors",
@@ -109,9 +104,12 @@ func run() -> void:
 		"stream_max_pending_sectors must be positive"
 	)
 
-	var minimum_scale = Settings.duplicate(true)
-	minimum_scale.stream_render_scale = 1.0
-	assert_true(minimum_scale.is_valid(), "render scale one remains valid")
+	var minimum_grid = Settings.duplicate(true)
+	minimum_grid.stream_viewport_grid_size = 1
+	assert_true(minimum_grid.is_valid(), "one viewport remains valid")
+	var larger_grid = Settings.duplicate(true)
+	larger_grid.stream_viewport_grid_size = 5
+	assert_true(larger_grid.is_valid(), "larger odd viewport grids remain valid")
 	_assert_validation_error(
 		"galaxy_disk_scale_length_pc",
 		0.0,

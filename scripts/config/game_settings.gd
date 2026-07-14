@@ -22,7 +22,7 @@ const SYSTEM_MAX_MOONS_PER_PLANET_LIMIT := 3999
 @export_category("Map Streaming")
 @export var stream_initial_load_radii: Vector2i
 @export var stream_max_pending_sectors: int
-@export var stream_render_scale: float
+@export var stream_viewport_grid_size: int
 @export var stream_load_margin: int
 @export var stream_unload_margin: int
 @export var stream_min_aspect_ratio: float
@@ -141,8 +141,9 @@ func _validate_streaming(errors: PackedStringArray) -> void:
 	if stream_initial_load_radii.x < 0 or stream_initial_load_radii.y < 0:
 		errors.append("stream_initial_load_radii must be nonnegative")
 	_require_positive(errors, "stream_max_pending_sectors", stream_max_pending_sectors)
-	if is_nan(stream_render_scale) or is_inf(stream_render_scale) or stream_render_scale < 1.0:
-		errors.append("stream_render_scale must be finite and at least 1")
+	_require_positive(errors, "stream_viewport_grid_size", stream_viewport_grid_size)
+	if stream_viewport_grid_size > 0 and stream_viewport_grid_size % 2 == 0:
+		errors.append("stream_viewport_grid_size must be odd")
 	_require_nonnegative(errors, "stream_load_margin", stream_load_margin)
 	_require_nonnegative(errors, "stream_unload_margin", stream_unload_margin)
 	_require_positive(errors, "stream_min_aspect_ratio", stream_min_aspect_ratio)

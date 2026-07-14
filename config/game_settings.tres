@@ -4,18 +4,18 @@
 
 [resource]
 script = ExtResource("1_settings")
-camera_max_zoom = 1000.0
+camera_max_zoom = 100.0
 camera_initial_zoom = 50.0
 camera_zoom_factor = 0.88
 camera_height = 40.0
 camera_drag_threshold_pixels = 4.0
 stream_initial_load_radii = Vector2i(2, 2)
 stream_max_pending_sectors = 256
-stream_render_scale = 10.0
+stream_viewport_grid_size = 3
 stream_load_margin = 0
 stream_unload_margin = 0
 stream_min_aspect_ratio = 0.25
-stream_max_aspect_ratio = 1.0
+stream_max_aspect_ratio = 4.0
 stream_sectors_per_frame = 2
 universe_global_seed = 6507495067992411987
 universe_generator_version = 1

@@ -73,7 +73,7 @@ func _test_zoom_clamps_and_signal() -> void:
 	var camera = CameraController.new()
 	var changed_sizes: Array[float] = []
 	camera.zoom_changed.connect(func(new_size: float): changed_sizes.append(new_size))
-	assert_equal(Settings.camera_max_zoom, 1000.0, "map can zoom out to the approved distance")
+	assert_equal(Settings.camera_max_zoom, 100.0, "map can zoom out to the approved distance")
 
 	camera.apply_zoom_steps(100)
 	var zoomed_in_size: float = camera.size
