@@ -331,6 +331,11 @@ git push
 **Interfaces:**
 - Metrics records profile/LOD, queue/jobs, generation timings, cache hits/misses/evictions, active real/aggregate points and main-thread application time.
 - Produces defensive `snapshot() -> Dictionary`.
+- `StreamingMetrics` receives the existing `SystemCompositionMetrics`. Its
+  defensive snapshot nests `composition_metrics.snapshot()` under `composition`.
+  The composition service records cache hits/misses on that shared collector; the
+  integration test repeats one request and asserts the cache hit increments without
+  adding a procedural or catalog timing sample.
 
 - [ ] **Step 1: Write failing metrics tests**
 

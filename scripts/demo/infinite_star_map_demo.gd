@@ -17,6 +17,18 @@ const Coordinate = preload("res://scripts/domain/universe/sector_coordinate.gd")
 const UniversePositionType = preload(
 	"res://scripts/domain/universe/universe_position.gd"
 )
+const CompositionMetrics = preload(
+	"res://scripts/application/performance/system_composition_metrics.gd"
+)
+const CompositionMetricsFormatter = preload(
+	"res://scripts/adapters/godot_view/system_composition_metrics_formatter.gd"
+)
+const LoadSystemComposition = preload(
+	"res://scripts/application/universe/load_system_composition.gd"
+)
+const ProceduralSystemFactory = preload(
+	"res://scripts/domain/universe/procedural_system_factory.gd"
+)
 const Settings = preload("res://config/game_settings.tres")
 
 var stats_label: Label
@@ -24,7 +36,10 @@ var map_camera
 var sector_view
 var stream
 var catalog_repository
+var composition_metrics
+var composition_loader
 var _repository_override
+var _composition_metrics_formatter
 
 
 func _init(repository_override = null) -> void:
@@ -41,6 +56,11 @@ func _init(repository_override = null) -> void:
 	stream.name = "SectorStreamController"
 	add_child(stream)
 
+	composition_metrics = CompositionMetrics.new(
+		Settings.performance_metrics_enabled,
+		Settings.performance_metrics_sample_capacity
+	)
+	_composition_metrics_formatter = CompositionMetricsFormatter.new()
 	_add_environment()
 	_add_hud()
 	map_camera.zoom_changed.connect(_on_zoom_changed)
@@ -98,6 +118,12 @@ func _configure_universe_stream() -> void:
 		_show_catalog_error("Scientific catalog metadata is unavailable")
 		_close_catalog_repository()
 		return
+	composition_loader = LoadSystemComposition.new(
+		catalog_repository,
+		ProceduralSystemFactory.new(),
+		generator.identity,
+		composition_metrics
+	)
 	var sector_source = LoadGalaxySector.new(catalog_repository, generator)
 	map_camera.set_logical_position(
 		UniversePositionType.new(
@@ -135,9 +161,23 @@ func _exit_tree() -> void:
 
 
 func _update_stats(sectors: int, systems: int, center_key: String) -> void:
-	stats_label.text = (
+	var map_text := (
 		"Seed: 0x%X\nSector: %s\nActive: %d\nSystems: %d\nZoom: %.1f"
 		% [Settings.universe_global_seed, center_key, sectors, systems, map_camera.size]
+	)
+	var metrics_text: String = _composition_metrics_formatter.format(
+		composition_metrics.snapshot()
+	)
+	stats_label.text = map_text if metrics_text.is_empty() else map_text + "\n" + metrics_text
+
+
+func refresh_debug_hud() -> void:
+	if stream.generator == null:
+		return
+	_update_stats(
+		sector_view.active_sector_count(),
+		sector_view.system_count(),
+		map_camera.logical_position.sector.key()
 	)
 
 
