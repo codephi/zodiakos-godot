@@ -10,33 +10,43 @@ func run() -> void:
 	var center = Coordinate.new(4, -2)
 	assert_equal(
 		projection.load_radii(300.0, 16.0 / 9.0),
-		Vector2i(68, 39),
-		"render scale expands both 16:9 dimensions before rounding"
+		Vector2i(14, 14),
+		"render scale grows with zoom and respects the configured aspect cap"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 9.0 / 16.0),
-		Vector2i(23, 39),
+		Vector2i(8, 14),
 		"portrait scale follows visible width"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 32.0 / 9.0),
-		Vector2i(135, 39),
-		"ultrawide scale follows visible width"
+		Vector2i(14, 14),
+		"ultrawide scale respects the configured aspect cap"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1920.0),
-		Vector2i(151, 39),
+		Vector2i(14, 14),
 		"degenerate wide viewport clamps before scaling"
 	)
 	assert_equal(
 		projection.load_radii(300.0, 1.0 / 1920.0),
-		Vector2i(11, 39),
+		Vector2i(4, 14),
 		"degenerate tall viewport retains scaled horizontal coverage"
 	)
 	assert_equal(
 		projection.load_radii(500.0, 1.0),
-		Vector2i(64, 64),
-		"five-hundred square expands to at least five thousand square"
+		Vector2i(35, 35),
+		"midpoint zoom uses the midpoint render scale"
+	)
+	assert_equal(
+		projection.load_radii(30.0, 1.0),
+		Vector2i(1, 1),
+		"near zoom loads only the current and neighboring sectors"
+	)
+	assert_equal(
+		projection.load_radii(1000.0, 1.0),
+		Vector2i(125, 125),
+		"maximum zoom reaches the configured maximum render scale"
 	)
 	var maximum_order = projection.load_order(center, {}, {}, Vector2i(8, 5))
 	assert_equal(

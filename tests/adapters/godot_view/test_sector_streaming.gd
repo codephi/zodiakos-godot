@@ -78,6 +78,7 @@ func run() -> void:
 	_test_intra_sector_motion_preserves_stream_state()
 	_test_view_update_reconciles_even_when_radii_are_unchanged()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
+	_test_near_zoom_releases_distant_preloaded_sectors()
 	_test_non_positive_viewport_width_is_ignored()
 	_test_extreme_positive_viewport_is_safely_bounded()
 	_test_invalid_visual_type_materializes_with_safe_fallback()
@@ -282,8 +283,8 @@ func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> 
 	controller.process_pending(controller.pending.size())
 	assert_equal(
 		view.active_sector_count(),
-		187,
-		"maximum zoom fills rectangular visible coverage"
+		121,
+		"reference zoom fills aspect-capped visible coverage"
 	)
 	var calls_at_maximum: Dictionary = generator.calls_by_sector.duplicate()
 	controller.update_view(300.0, Vector2(1920.0, 1080.0))
@@ -298,6 +299,28 @@ func _test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis() -> 
 	assert_true(
 		view.active_sector_count() <= 63,
 		"zooming in unloads sectors outside hysteresis"
+	)
+	controller.free()
+	view.free()
+
+
+func _test_near_zoom_releases_distant_preloaded_sectors() -> void:
+	var view = View.new()
+	var controller = Controller.new()
+	controller.configure(
+		Generator.new(FakeRepository.new()),
+		view,
+		PositionType.new(Coordinate.new(), Vector2.ZERO)
+	)
+	controller.update_view(94.7, Vector2(1920.0, 1024.0))
+	controller.process_pending(controller.pending.size())
+	controller.update_view(30.0, Vector2(1920.0, 1024.0))
+	controller.process_pending(controller.pending.size())
+	assert_equal(controller.load_radii, Vector2i(1, 1), "near zoom target is three by three")
+	assert_equal(
+		view.active_sector_count(),
+		9,
+		"near zoom retains only nine sectors instead of the reported 169"
 	)
 	controller.free()
 	view.free()
@@ -356,13 +379,13 @@ func _test_extreme_positive_viewport_is_safely_bounded() -> void:
 	controller.update_view(300.0, Vector2(1920.0, 1.0))
 	assert_equal(
 		controller.load_radii,
-		Vector2i(16, 5),
+		Vector2i(5, 5),
 		"one-pixel viewport height cannot create an unbounded stream"
 	)
 	assert_equal(
 		controller.pending.size(),
-		363,
-		"bounded extreme coverage queues at most 33 by 11 sectors"
+		121,
+		"bounded extreme coverage queues at most 11 by 11 sectors"
 	)
 	controller.free()
 	view.free()

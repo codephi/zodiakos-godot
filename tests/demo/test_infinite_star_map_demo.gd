@@ -146,7 +146,7 @@ func _test_reference_zoom_refreshes_stream_coverage() -> void:
 	assert_equal(camera.size, 300.0, "coverage test uses its reference zoom")
 	assert_equal(
 		stream.load_radii,
-		Vector2i(68, 39),
+		Vector2i(14, 14),
 		"demo forwards reference 16:9 coverage"
 	)
 	demo.free()
@@ -168,13 +168,13 @@ func _test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage() ->
 	demo._refresh_stream_coverage(Vector2(900.0, 1600.0))
 	assert_equal(
 		stream.load_radii,
-		Vector2i(23, 39),
+		Vector2i(8, 14),
 		"portrait resize provides portrait stream coverage"
 	)
 	demo._refresh_stream_coverage(Vector2(3200.0, 900.0))
 	assert_equal(
 		stream.load_radii,
-		Vector2i(135, 39),
+		Vector2i(14, 14),
 		"ultrawide resize refreshes stream coverage"
 	)
 	demo.free()

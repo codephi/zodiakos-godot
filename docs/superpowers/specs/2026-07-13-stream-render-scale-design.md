@@ -1,130 +1,112 @@
-# Stream Render Scale Design
+# Zoom-Dependent Stream Render Scale Design
 
-**Date:** 2026-07-13
+**Original date:** 2026-07-13
+
+**Revised:** 2026-07-14
 
 ## Objective
 
-Allow the procedural star-map stream to load an area whose width and height are
-a configurable multiple of the visible viewport. A value of `10.0` means the
-streaming rectangle is ten times wider and ten times taller than the visible
-map rectangle before sector rounding.
+Load only nearby sectors while the player is close to the map and progressively
+increase preventive off-screen coverage as the camera zooms out. The configured
+`stream_render_scale = 10.0` is the maximum amplification reached at maximum
+zoom, not a constant multiplier at every zoom level.
 
-This setting controls preventive off-screen loading. It does not change camera
-zoom, star density, universe identity or what the GPU displays inside the camera.
+This setting controls off-screen procedural streaming. It does not change star
+density, universe identity or camera rendering.
 
 ## Configuration
 
-Add one typed Inspector field under `Map Streaming`:
-
-```gdscript
-@export var stream_render_scale: float
-```
-
-Production values:
+Map Streaming production values:
 
 ```text
 stream_render_scale = 10.0
-stream_load_margin = 1
-stream_unload_margin = 1
+stream_load_margin = 0
+stream_unload_margin = 0
+stream_min_aspect_ratio = 0.25
+stream_max_aspect_ratio = 1.0
 ```
 
-`stream_render_scale` must be at least `1.0`. Values below one would permit
-unloaded holes inside the visible viewport and are invalid. It is a presentation
-and streaming budget, so it must remain outside `UniverseIdentity`.
+`stream_render_scale` must be finite and at least `1.0`. It remains editable in
+the Inspector and outside `UniverseIdentity`.
 
-`stream_load_margin` remains a separate fixed safety ring after scaling and
-sector rounding. It is restored from the temporary value `10` to `1` because it
-is no longer being used as a dimension multiplier.
+Zero load/unload margins make the active sector set follow the rounded target
+immediately when zooming in. Sector ceiling already covers the current sector
+and every neighboring sector crossed by the viewport.
 
 ## Projection Formula
 
-For orthographic height `H`, clamped viewport aspect ratio `A`, universe sector
-size `S`, render scale `R` and fixed load margin `M`:
+For orthographic height `H`, camera range `[Zmin, Zmax]`, maximum scale `Rmax`,
+clamped aspect ratio `A`, sector size `S` and margin `M`:
 
 ```text
-scaled_half_height = max(H, 0) × 0.5 × R
-scaled_half_width  = scaled_half_height × A
+zoom_progress = clamp((max(H, 0) - Zmin) / (Zmax - Zmin), 0, 1)
+effective_scale = lerp(1, Rmax, zoom_progress)
+scaled_half_height = max(H, 0) × 0.5 × effective_scale
+scaled_half_width = scaled_half_height × A
 radius_y = ceil(scaled_half_height / S) + M
-radius_x = ceil(scaled_half_width  / S) + M
+radius_x = ceil(scaled_half_width / S) + M
 ```
 
-The stream loads every sector inside `[-radius_x, radius_x]` and
-`[-radius_y, radius_y]` relative to the current center. Unload radii continue to
-add `stream_unload_margin` to both load radii.
+If the configured camera range has no span, projection uses `Rmax` directly.
 
-### Example requested by the user
+## Reference Behavior
 
-For a square visible area of `500 × 500`, `S = 40`, `R = 10` and `M = 1`:
+With camera range `0..1000`, `Rmax = 10`, sector size `40`, aspect cap `1` and
+zero margins:
 
-```text
-scaled visible target = 5,000 × 5,000
-radius per axis = ceil(2,500 / 40) + 1 = 64 sectors
-loaded span = (64 × 2 + 1) × 40 = 5,160 units per axis
-```
+| Camera zoom | Effective scale | Radius | Sector target |
+| ---: | ---: | ---: | ---: |
+| `0` | `1.00×` | `(0, 0)` | `1` |
+| `30` | `1.27×` | `(1, 1)` | `9` |
+| `94.7` | `1.85×` | `(3, 3)` | `49` |
+| `300` | `3.70×` | `(14, 14)` | `841` |
+| `500` | `5.50×` | `(35, 35)` | `5,041` |
+| `1000` | `10.00×` | `(125, 125)` | `63,001` |
 
-The result is slightly larger than `5,000 × 5,000` because the stream loads
-whole sectors and keeps one additional safety ring.
+The zoom-30 row is the reported regression target: after zooming in from `94.7`,
+the stream must release distant sectors and retain only `3 × 3 = 9` sectors.
+At the current average density this is approximately four loaded stellar systems,
+though exact SS count remains deterministic by location.
 
 ## Runtime Behavior
 
-- Camera or viewport changes recompute scaled radii.
-- Existing active sectors are reused.
-- Newly covered sectors enter the existing center-first queue.
-- Sectors outside scaled unload radii are removed.
-- Invalid nonpositive viewport dimensions continue to leave current coverage
-  unchanged.
-- No hidden benchmark or extra canonical data is generated.
-- The HUD may report more active systems, but the visible image does not change
-  until the player moves the camera into the preloaded area.
+- Camera or viewport changes recompute zoom-dependent radii.
+- Existing active sectors inside the new target are reused.
+- Newly covered sectors enter the center-first queue.
+- Sectors outside the unload radii are removed immediately with production
+  unload margin zero.
+- Invalid nonpositive viewport dimensions leave current coverage unchanged.
+- The HUD `Active` value counts loaded sectors, while `Systems` counts loaded SS;
+  neither is a count of only the points currently visible inside the camera.
+- Canonical generation and system composition are unchanged.
 
 ## Performance Implications
 
-The multiplier is linear per dimension and quadratic in area. Scale `10` can
-cover roughly one hundred times the visible area before rounding and margins.
+The old constant `10×` rule requested radius `(5,5)` at zoom `30` and retained
+`169` sectors after hysteresis. The revised rule requests radius `(1,1)` and
+retains `9` sectors.
 
-At the current reference `H = 300`, aspect `16:9`, `S = 40`, `R = 10` and
-`M = 1`, the radii are `(68, 39)`, or `137 × 79 = 10,823` sectors. The current
-two-sectors-per-frame budget requires about 5,412 frames to materialize the full
-rectangle. Center-first ordering keeps visible and nearby sectors ahead of the
-distant buffer.
-
-This setting is intentionally configurable in the Inspector. The later bounded
-async streaming implementation will prevent the full rectangle from becoming an
-eager in-memory request array, but that optimization does not alter this
-projection contract.
+Maximum zoom still reaches `10×`, so its 63,001-sector target requires the
+separate bounded lazy queue design. The projection contract defines eventual
+coverage; it does not require allocating every coordinate at once.
 
 ## Testing
 
-Configuration tests prove:
+Tests prove:
 
-- production render scale is `10.0`;
-- production load margin is restored to `1`;
-- scale `1.0` is valid;
-- scale below `1.0` is rejected.
-
-Projection tests prove:
-
-- the scale is applied to both axes before rounding;
-- the fixed margin is added after scaling;
-- reference, portrait, ultrawide and clamped extreme aspect ratios;
-- the `500 × 500` example produces radius `(64, 64)`;
-- injected scale `1.0` preserves unscaled behavior;
-- unload hysteresis remains additive after scaling.
-
-Controller and demo tests prove:
-
-- computed radii reach the stream controller;
-- active sectors are reused when scaled coverage is unchanged;
-- invalid viewports create no new work;
-- behavioral tests that fully materialize sectors use injected scale `1.0` to
-  remain fast while production projection is covered independently.
+- zoom `30` resolves to radius `(1,1)` and nine active sectors after zoom-in;
+- zoom `500` uses midpoint scale `5.5×`;
+- zoom `1000` reaches the configured maximum `10×`;
+- portrait and extreme aspect values remain clamped;
+- scale `1.0` preserves unscaled injected behavior;
+- camera/viewport invalid inputs remain safe;
+- changing presentation scale does not change universe identity.
 
 ## Acceptance Criteria
 
-- `stream_render_scale` is visible and editable in `game_settings.tres`.
-- Value `10.0` scales both visible dimensions by ten.
-- `stream_load_margin` returns to one fixed sector ring.
-- Sector rounding never leaves a visible or scaled-target gap.
-- Universe identity and procedural system contents remain unchanged.
-- Existing center-first generation, reuse, invalid-viewport and unload behavior
-  remain intact.
+- Near zoom loads a small neighboring set instead of applying constant `10×`.
+- Amplification grows monotonically with camera zoom.
+- Maximum zoom still reaches the configured render scale.
+- Zooming in releases sectors outside the current target.
+- All tuning remains in `config/game_settings.tres`.
+- Procedural universe contents remain unchanged.

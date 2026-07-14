@@ -4,7 +4,7 @@
 
 ## Objective
 
-Preserve the approved `stream_render_scale = 10.0` behavior while preventing
+Preserve the approved zoom-dependent `stream_render_scale = 10.0` maximum while preventing
 large zoom changes from eagerly allocating and sorting every covered sector.
 
 The final target coverage remains unchanged: small zoom values cover few nearby
@@ -13,8 +13,8 @@ enumeration becomes lazy and memory-bounded.
 
 ## Problem
 
-At zoom `1000`, aspect `16:9`, scale `10`, sector size `40` and fixed margin `1`,
-the approved projection produces radii `(224, 126)`, or 113,597 sectors. The
+At zoom `1000`, maximum aspect `1`, scale `10`, sector size `40` and margin `0`,
+the approved projection produces radii `(125, 125)`, or 63,001 sectors. The
 current controller calls `load_order`, which creates and sorts one Array with all
 coordinates synchronously before the two-sectors-per-frame generation budget can
 take effect.
@@ -104,13 +104,14 @@ synchronous in this phase, so there are no worker results to invalidate.
 - Center and nearest rings are generated first.
 - Active sectors are never regenerated during an unchanged reconciliation.
 - Invalid viewport sizes create no iterator and no extra work.
-- Unload hysteresis remains based on scaled load radii plus unload margin.
+- Unloading remains based on scaled load radii plus the configured unload margin.
 - Canonical sector/system generation remains unchanged.
 - This phase does not introduce threads, SQLite access changes or GPU generation.
 
-At exact zoom `0`, scale contributes zero and the fixed margin yields radii
-`(1, 1)`, so nine nearby sectors are the complete target. At zoom `1000`, the
-target remains 113,597 sectors, but only 256 wait in memory at a time.
+At exact zoom `0`, radii are `(0, 0)`, so only the current sector is targeted.
+At zoom `30`, radii are `(1, 1)`, matching the nine-sector regression target.
+At zoom `1000`, the target remains 63,001 sectors, but only 256 wait in memory
+at a time.
 
 ## Existing API Transition
 
@@ -162,12 +163,12 @@ Configuration and identity tests cover:
 
 ## Performance Acceptance
 
-For production zoom `1000` at `16:9`:
+For production zoom `1000` with maximum aspect `1`:
 
-- `load_radii == Vector2i(224, 126)`;
-- mathematical target remains 113,597 sectors;
+- `load_radii == Vector2i(125, 125)`;
+- mathematical target remains 63,001 sectors;
 - pending count is at most 256;
-- reconciliation does not allocate or sort an Array proportional to 113,597;
+- reconciliation does not allocate or sort an Array proportional to 63,001;
 - generation remains limited by `stream_sectors_per_frame`.
 
 ## Acceptance Criteria

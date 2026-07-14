@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Keep scale-ten zoom coverage intact while replacing eager full-area coordinate arrays with a deterministic ring iterator and a 256-coordinate pending window.
+**Goal:** Keep zoom-dependent coverage, including scale ten at maximum zoom, while replacing eager full-area coordinate arrays with a deterministic ring iterator and a 256-coordinate pending window.
 
 **Architecture:** A pure `SectorRingIterator` owns O(1) enumeration state and preserves the existing distance/y/x order. `SectorStreamController` replaces the iterator only when the center or effective load radii change, keeps a configured pending window, and refills it after the existing per-frame generation batch.
 
@@ -13,8 +13,8 @@
 - Develop and validate on native Windows; do not use WSL.
 - Keep handwritten files at or below 1,000 lines.
 - Use TDD and observe focused failures before production changes.
-- Preserve `stream_render_scale = 10.0`, `stream_load_margin = 1`, `stream_unload_margin = 1`.
-- Preserve the user's Inspector change `stream_max_aspect_ratio = 2.0`.
+- Preserve `stream_render_scale = 10.0`, `stream_load_margin = 0`, `stream_unload_margin = 0`.
+- Preserve the user's current Inspector value `stream_max_aspect_ratio = 1.0`.
 - Reject nonfinite `stream_render_scale` as well as values below `1.0`.
 - Set `stream_max_pending_sectors = 256` and require it to be positive.
 - Never cap final scale-derived coverage; cap only coordinates waiting in memory.
@@ -53,7 +53,7 @@
 Add production assertions to `tests/config/test_game_settings.gd`:
 
 ```gdscript
-assert_equal(Settings.stream_max_aspect_ratio, 2.0, "stream maximum aspect")
+assert_equal(Settings.stream_max_aspect_ratio, 1.0, "stream maximum aspect")
 assert_equal(Settings.stream_max_pending_sectors, 256, "stream pending cap")
 ```
 
@@ -99,26 +99,25 @@ func _test_stream_pending_cap_does_not_version_universe() -> void:
 	)
 ```
 
-Update the production extreme-wide expectation in
-`tests/application/projections/test_visible_sector_projection.gd` from
-`Vector2i(151, 39)` to:
+Preserve the zoom-dependent production extreme-wide expectation in
+`tests/application/projections/test_visible_sector_projection.gd`:
 
 ```gdscript
-Vector2i(76, 39)
+Vector2i(14, 14)
 ```
 
-This records the user-approved maximum aspect `2.0`; 16:9 production expectations
-remain unchanged.
+This records the user-approved maximum aspect `1.0` and the zoom-dependent scale
+already implemented before this plan executes.
 
 Update the aspect-dependent integration expectations in the same commit:
 
 ```gdscript
 # tests/adapters/godot_view/test_sector_streaming.gd, injected scale 1
-controller.load_radii == Vector2i(9, 5)
-controller.pending.size() == 209
+controller.load_radii == Vector2i(5, 5)
+controller.pending.size() == 121
 
 # tests/demo/test_infinite_star_map_demo.gd, production scale 10 at 32:9
-stream.load_radii == Vector2i(76, 39)
+stream.load_radii == Vector2i(14, 14)
 ```
 
 - [ ] **Step 2: Write the failing iterator suite**
@@ -226,7 +225,7 @@ In `config/game_settings.tres`, preserve the current aspect change and add:
 
 ```text
 stream_max_pending_sectors = 256
-stream_max_aspect_ratio = 2.0
+stream_max_aspect_ratio = 1.0
 ```
 
 - [ ] **Step 5: Implement the O(1)-state ring iterator**
@@ -299,8 +298,8 @@ func _advance_ring() -> void:
 
 - [ ] **Step 6: Align docs and the future async plan**
 
-In `docs/superpowers/specs/2026-07-13-central-game-settings-design.md`, change
-the maximum aspect value to `2.0` and add pending window `256` under map streaming.
+In `docs/superpowers/specs/2026-07-13-central-game-settings-design.md`, preserve
+the maximum aspect value `1.0` and add pending window `256` under map streaming.
 
 In `docs/superpowers/specs/2026-07-13-stream-render-scale-design.md`, clarify
 that render scale must be finite and at least `1.0`.
@@ -360,7 +359,7 @@ func _test_production_maximum_zoom_uses_bounded_lazy_pending() -> void:
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
 	controller.update_view(1000.0, Vector2(1920.0, 1080.0))
-	assert_equal(controller.load_radii, Vector2i(224, 126), "maximum zoom target")
+	assert_equal(controller.load_radii, Vector2i(125, 125), "maximum zoom target")
 	assert_equal(controller.pending.size(), 256, "pending stays at production cap")
 	controller.process_pending(2)
 	assert_equal(view.active_sector_count(), 2, "frame batch generates two sectors")
@@ -395,9 +394,9 @@ Extend `_test_view_update_reconciles_even_when_radii_are_unchanged` to capture
 `pending` keys before the repeated view update and assert they remain identical,
 while retaining its existing rebase assertion.
 
-The maximum-aspect expectation was already updated atomically with the user
-setting in Task 1: scale-one radii are `Vector2i(9, 5)` and complete coverage is
-`209` under the injected cap `512`.
+The maximum-aspect expectation is preserved atomically with the user setting in
+Task 1: scale-one radii are `Vector2i(5, 5)` and complete coverage is `121` under
+the injected cap `512`.
 
 - [ ] **Step 2: Update demo maximum-zoom routing test**
 
@@ -409,14 +408,13 @@ func _test_maximum_zoom_routes_scaled_lazy_coverage() -> void:
 	var stream = demo.get_node("SectorStreamController")
 	demo.get_node("MapCamera").size = 1000.0
 	demo._refresh_stream_coverage(Vector2(1920.0, 1080.0))
-	assert_equal(stream.load_radii, Vector2i(224, 126), "demo routes max zoom radii")
+	assert_equal(stream.load_radii, Vector2i(125, 125), "demo routes max zoom radii")
 	assert_equal(stream.pending.size(), 256, "demo pending remains bounded")
 	demo.free()
 ```
 
-Register it in `run()`. Existing zoom `300` expectations for 16:9 and portrait
-remain valid; Task 1 already updated 32:9 to the approved aspect-two result
-`(76, 39)`.
+Register it in `run()`. Existing zoom `300` expectations remain valid; Task 1
+preserves the approved aspect-one result `(14, 14)` for wide viewports.
 
 - [ ] **Step 3: Run focused tests and verify RED**
 
