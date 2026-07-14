@@ -15,6 +15,8 @@ func run() -> void:
 	assert_equal(Settings.camera_zoom_factor, 0.88, "camera zoom factor")
 	assert_equal(Settings.stream_sectors_per_frame, 2, "stream frame budget")
 	assert_equal(Settings.stream_viewport_grid_size, 3, "stream viewport grid size")
+	assert_true(not Settings.stream_use_fixed_preload_zoom, "fixed preload is opt-in")
+	assert_equal(Settings.stream_fixed_preload_zoom, 1000.0, "fixed preload reference zoom")
 	assert_equal(Settings.stream_max_pending_sectors, 256, "stream pending cap")
 	assert_equal(Settings.stream_load_margin, 0, "stream uses exact rounded coverage")
 	assert_equal(Settings.stream_unload_margin, 0, "near zoom releases distant sectors")
@@ -99,6 +101,21 @@ func run() -> void:
 		"stream_viewport_grid_size must be odd"
 	)
 	_assert_validation_error(
+		&"stream_fixed_preload_zoom",
+		-0.01,
+		"stream_fixed_preload_zoom must be nonnegative"
+	)
+	_assert_validation_error(
+		&"stream_fixed_preload_zoom",
+		NAN,
+		"stream_fixed_preload_zoom must be nonnegative"
+	)
+	_assert_validation_error(
+		&"stream_fixed_preload_zoom",
+		INF,
+		"stream_fixed_preload_zoom must be nonnegative"
+	)
+	_assert_validation_error(
 		&"stream_max_pending_sectors",
 		0,
 		"stream_max_pending_sectors must be positive"
@@ -110,6 +127,9 @@ func run() -> void:
 	var larger_grid = Settings.duplicate(true)
 	larger_grid.stream_viewport_grid_size = 5
 	assert_true(larger_grid.is_valid(), "larger odd viewport grids remain valid")
+	var zero_fixed_zoom = Settings.duplicate(true)
+	zero_fixed_zoom.stream_fixed_preload_zoom = 0.0
+	assert_true(zero_fixed_zoom.is_valid(), "zero fixed preload zoom remains valid")
 	_assert_validation_error(
 		"galaxy_disk_scale_length_pc",
 		0.0,

@@ -74,6 +74,37 @@ func run() -> void:
 		load_at_max.x >= visible_at_max.x and load_at_max.y >= visible_at_max.y,
 		"expanded coverage contains visible coverage"
 	)
+	var fixed = Settings.duplicate(true)
+	fixed.stream_use_fixed_preload_zoom = true
+	fixed.stream_fixed_preload_zoom = 1000.0
+	fixed.stream_viewport_grid_size = 3
+	var fixed_projection = ProjectionScript.new(fixed)
+	assert_equal(
+		fixed_projection.effective_preload_zoom(30.0),
+		1000.0,
+		"fixed preload zoom is a floor"
+	)
+	assert_equal(
+		fixed_projection.visible_radii(30.0, 16.0 / 9.0),
+		Vector2i(1, 1),
+		"visible coverage continues to use camera zoom"
+	)
+	assert_equal(
+		fixed_projection.load_radii(30.0, 16.0 / 9.0),
+		Vector2i(67, 38),
+		"preload coverage uses fixed zoom"
+	)
+	assert_equal(
+		fixed_projection.effective_preload_zoom(1200.0),
+		1200.0,
+		"camera zoom above the fixed floor wins"
+	)
+	fixed.stream_use_fixed_preload_zoom = false
+	assert_equal(
+		fixed_projection.effective_preload_zoom(30.0),
+		30.0,
+		"disabled fixed preload follows camera zoom"
+	)
 	var distance_three = center.offset(3, 3)
 	var far = [center.offset(4, 0), center.offset(0, -4), distance_three]
 	var unload = projection.unload_coordinates(center, far, Vector2i(3, 3))

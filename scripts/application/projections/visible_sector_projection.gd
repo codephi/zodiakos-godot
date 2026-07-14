@@ -14,10 +14,17 @@ func visible_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
 	return _coverage_radii(orthographic_size, aspect_ratio, 1.0)
 
 
+func effective_preload_zoom(camera_zoom: float) -> float:
+	var safe_camera_zoom := maxf(camera_zoom, 0.0)
+	if not settings.stream_use_fixed_preload_zoom:
+		return safe_camera_zoom
+	return maxf(safe_camera_zoom, settings.stream_fixed_preload_zoom)
+
+
 func load_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
 	var visible := visible_radii(orthographic_size, aspect_ratio)
 	var expanded := _coverage_radii(
-		orthographic_size,
+		effective_preload_zoom(orthographic_size),
 		aspect_ratio,
 		float(settings.stream_viewport_grid_size)
 	)

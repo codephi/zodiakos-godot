@@ -29,6 +29,7 @@ func run() -> void:
 	_test_universe_identity_is_stable_and_versioned()
 	_test_every_output_setting_versions_the_identity()
 	_test_stream_viewport_grid_does_not_version_universe()
+	_test_fixed_preload_settings_do_not_version_universe()
 	_test_stream_pending_cap_does_not_version_universe()
 	_test_procedural_candidates_are_deterministic_and_bounded()
 	_test_candidate_generation_does_not_touch_global_random_state()
@@ -118,6 +119,19 @@ func _test_stream_viewport_grid_does_not_version_universe() -> void:
 		Identity.new(101, 7, metadata, changed).value,
 		baseline,
 		"presentation viewport grid stays outside universe identity"
+	)
+
+
+func _test_fixed_preload_settings_do_not_version_universe() -> void:
+	var metadata = Metadata.new(1, 2, 3)
+	var baseline = Identity.new(101, 7, metadata, Settings).value
+	var changed = Settings.duplicate(true)
+	changed.stream_use_fixed_preload_zoom = not Settings.stream_use_fixed_preload_zoom
+	changed.stream_fixed_preload_zoom = Settings.stream_fixed_preload_zoom + 1.0
+	assert_equal(
+		Identity.new(101, 7, metadata, changed).value,
+		baseline,
+		"fixed preload presentation settings stay outside universe identity"
 	)
 
 

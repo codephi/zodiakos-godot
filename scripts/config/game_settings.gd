@@ -23,6 +23,8 @@ const SYSTEM_MAX_MOONS_PER_PLANET_LIMIT := 3999
 @export var stream_initial_load_radii: Vector2i
 @export var stream_max_pending_sectors: int
 @export var stream_viewport_grid_size: int
+@export var stream_use_fixed_preload_zoom: bool
+@export var stream_fixed_preload_zoom: float
 @export var stream_load_margin: int
 @export var stream_unload_margin: int
 @export var stream_min_aspect_ratio: float
@@ -144,6 +146,12 @@ func _validate_streaming(errors: PackedStringArray) -> void:
 	_require_positive(errors, "stream_viewport_grid_size", stream_viewport_grid_size)
 	if stream_viewport_grid_size > 0 and stream_viewport_grid_size % 2 == 0:
 		errors.append("stream_viewport_grid_size must be odd")
+	if (
+		is_nan(stream_fixed_preload_zoom)
+		or is_inf(stream_fixed_preload_zoom)
+		or stream_fixed_preload_zoom < 0.0
+	):
+		errors.append("stream_fixed_preload_zoom must be nonnegative")
 	_require_nonnegative(errors, "stream_load_margin", stream_load_margin)
 	_require_nonnegative(errors, "stream_unload_margin", stream_unload_margin)
 	_require_positive(errors, "stream_min_aspect_ratio", stream_min_aspect_ratio)
