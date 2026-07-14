@@ -10,13 +10,26 @@ func _init(configuration = DefaultSettings) -> void:
 	settings = configuration
 
 
+func visible_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
+	return _coverage_radii(orthographic_size, aspect_ratio, 1.0)
+
+
 func load_radii(orthographic_size: float, aspect_ratio: float) -> Vector2i:
-	var effective_render_scale := _effective_render_scale(orthographic_size)
-	var scaled_half_height: float = (
-		maxf(orthographic_size, 0.0)
-		* 0.5
-		* effective_render_scale
+	var visible := visible_radii(orthographic_size, aspect_ratio)
+	var expanded := _coverage_radii(
+		orthographic_size,
+		aspect_ratio,
+		_effective_render_scale(orthographic_size)
 	)
+	return Vector2i(maxi(expanded.x, visible.x), maxi(expanded.y, visible.y))
+
+
+func _coverage_radii(
+	orthographic_size: float,
+	aspect_ratio: float,
+	render_scale: float
+) -> Vector2i:
+	var scaled_half_height := maxf(orthographic_size, 0.0) * 0.5 * render_scale
 	var safe_aspect_ratio := clampf(
 		aspect_ratio,
 		settings.stream_min_aspect_ratio,

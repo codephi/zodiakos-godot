@@ -48,6 +48,22 @@ func run() -> void:
 		Vector2i(125, 125),
 		"maximum zoom reaches the configured maximum render scale"
 	)
+	assert_equal(
+		projection.visible_radii(300.0, 1.0),
+		Vector2i(4, 4),
+		"visible coverage does not use render amplification"
+	)
+	assert_equal(
+		projection.visible_radii(300.0, 9.0 / 16.0),
+		Vector2i(3, 4),
+		"visible coverage preserves safe rectangular aspect"
+	)
+	var visible_at_max: Vector2i = projection.visible_radii(1000.0, 1.0)
+	var load_at_max: Vector2i = projection.load_radii(1000.0, 1.0)
+	assert_true(
+		load_at_max.x >= visible_at_max.x and load_at_max.y >= visible_at_max.y,
+		"expanded coverage contains visible coverage"
+	)
 	var distance_three = center.offset(3, 3)
 	var far = [center.offset(4, 0), center.offset(0, -4), distance_three]
 	var unload = projection.unload_coordinates(center, far, Vector2i(3, 3))
