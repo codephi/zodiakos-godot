@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: Typed render scale and pure projection
+### Task 1: Complete stream render scale delivery
 
 **Files:**
 - Modify: `scripts/config/game_settings.gd`
@@ -32,6 +32,8 @@
 - Modify: `tests/config/test_game_settings.gd`
 - Modify: `tests/application/projections/test_visible_sector_projection.gd`
 - Modify: `tests/domain/universe/test_universe_generator.gd`
+- Modify: `tests/adapters/godot_view/test_sector_streaming.gd`
+- Modify: `tests/demo/test_infinite_star_map_demo.gd`
 - Modify: `docs/superpowers/specs/2026-07-13-central-game-settings-design.md`
 - Modify: `docs/superpowers/specs/2026-07-13-extended-map-zoom-design.md`
 
@@ -207,39 +209,7 @@ antes do arredondamento por setores. Uma margem fixa de um setor é aplicada
 depois do arredondamento, e a descarga mantém sua margem adicional de histerese.
 ```
 
-- [ ] **Step 7: Run focused and full tests**
-
-```powershell
-./tools/run_godot_tests.ps1 -Suite 'res://tests/config/test_game_settings.gd'
-./tools/run_godot_tests.ps1 -Suite 'res://tests/application/projections/test_visible_sector_projection.gd'
-./tools/run_godot_tests.ps1 -Suite 'res://tests/domain/universe/test_universe_generator.gd'
-./tools/run_godot_tests.ps1
-```
-
-Expected: all commands print `TESTS PASSED` and exit `0`.
-
-- [ ] **Step 8: Commit and push**
-
-```powershell
-git add scripts/config/game_settings.gd config/game_settings.tres scripts/application/projections/visible_sector_projection.gd tests/config/test_game_settings.gd tests/application/projections/test_visible_sector_projection.gd tests/domain/universe/test_universe_generator.gd docs/superpowers/specs/2026-07-13-central-game-settings-design.md docs/superpowers/specs/2026-07-13-extended-map-zoom-design.md
-git commit -m "feat: scale procedural streaming beyond viewport"
-git push
-```
-
----
-
-### Task 2: Controller and demo integration at bounded test cost
-
-**Files:**
-- Modify: `tests/adapters/godot_view/test_sector_streaming.gd`
-- Modify: `tests/demo/test_infinite_star_map_demo.gd`
-
-**Interfaces:**
-- `SectorStreamController.update_view` remains unchanged and receives production or injected settings through its constructor.
-- Demo continues forwarding camera size and viewport size; its expected production radii reflect scale `10.0`.
-- Tests that fully materialize sectors use scale `1.0`; production-scale behavior remains covered by projection and demo routing assertions.
-
-- [ ] **Step 1: Make controller behavior tests use injected unscaled settings**
+- [ ] **Step 7: Keep controller integration tests bounded**
 
 Add this helper near the bottom of
 `tests/adapters/godot_view/test_sector_streaming.gd`:
@@ -269,9 +239,9 @@ controller.pending.size() == 363
 ```
 
 Keep `process_pending(controller.pending.size())`; it drains the complete
-injected test queue without embedding a batch-size magic number.
+injected queue without embedding a batch-size magic number.
 
-- [ ] **Step 2: Update production demo routing expectations**
+- [ ] **Step 8: Update production demo routing expectations**
 
 In `tests/demo/test_infinite_star_map_demo.gd`, use:
 
@@ -281,35 +251,30 @@ Vector2i(23, 39)  # 300 high, 9:16
 Vector2i(135, 39) # 300 high, 32:9
 ```
 
-These tests must inspect `stream.load_radii` only; do not call
-`process_pending` for production scale.
+These tests inspect `stream.load_radii` only and must not call `process_pending`
+for production scale.
 
-- [ ] **Step 3: Run focused tests and verify GREEN**
+- [ ] **Step 9: Run focused, full, catalog and smoke verification**
 
 ```powershell
+./tools/run_godot_tests.ps1 -Suite 'res://tests/config/test_game_settings.gd'
+./tools/run_godot_tests.ps1 -Suite 'res://tests/application/projections/test_visible_sector_projection.gd'
+./tools/run_godot_tests.ps1 -Suite 'res://tests/domain/universe/test_universe_generator.gd'
 ./tools/run_godot_tests.ps1 -Suite 'res://tests/adapters/godot_view/test_sector_streaming.gd'
 ./tools/run_godot_tests.ps1 -Suite 'res://tests/demo/test_infinite_star_map_demo.gd'
-```
-
-Expected: both commands print `TESTS PASSED`; controller tests remain bounded and
-demo assertions prove production scale reaches the integration boundary.
-
-- [ ] **Step 4: Run final verification**
-
-```powershell
 ./tools/run_godot_tests.ps1
 ./tools/run_godot_tests.ps1 -RunnerScript 'res://tools/catalog/validate_catalog.gd'
 & "$env:LOCALAPPDATA\Programs\Godot\4.7\godot_console.exe" --headless --path . --quit-after 20
 git diff --check
 ```
 
-Expected: full suite passes, catalog prints `CATALOG VALID`, smoke exits `0` and
-diff check is clean.
+Expected: focused/full suites print `TESTS PASSED`, catalog prints
+`CATALOG VALID`, smoke exits `0` and diff check is clean.
 
-- [ ] **Step 5: Commit and push**
+- [ ] **Step 10: Commit and push the atomic implementation**
 
 ```powershell
-git add tests/adapters/godot_view/test_sector_streaming.gd tests/demo/test_infinite_star_map_demo.gd
-git commit -m "test: cover scaled stream integration"
+git add scripts/config/game_settings.gd config/game_settings.tres scripts/application/projections/visible_sector_projection.gd tests/config/test_game_settings.gd tests/application/projections/test_visible_sector_projection.gd tests/domain/universe/test_universe_generator.gd tests/adapters/godot_view/test_sector_streaming.gd tests/demo/test_infinite_star_map_demo.gd docs/superpowers/specs/2026-07-13-central-game-settings-design.md docs/superpowers/specs/2026-07-13-extended-map-zoom-design.md
+git commit -m "feat: scale procedural streaming beyond viewport"
 git push
 ```
