@@ -88,7 +88,7 @@ func run() -> void:
 	_test_intra_sector_motion_preserves_stream_state()
 	_test_view_update_reconciles_even_when_radii_are_unchanged()
 	_test_visible_sectors_materialize_before_external_preload()
-	_test_production_maximum_zoom_uses_bounded_lazy_pending()
+	_test_large_projection_uses_bounded_lazy_pending()
 	_test_injected_pending_cap_and_zero_processing_limit()
 	_test_zoom_coverage_reuses_active_sectors_and_unloads_with_hysteresis()
 	_test_near_zoom_releases_distant_preloaded_sectors()
@@ -306,7 +306,7 @@ func _test_visible_sectors_materialize_before_external_preload() -> void:
 	controller.process_pending(46)
 
 	assert_equal(controller.visible_radii, Vector2i(2, 4), "visible target")
-	assert_equal(controller.load_radii, Vector2i(7, 14), "expanded target")
+	assert_equal(controller.load_radii, Vector2i(6, 12), "expanded target")
 	assert_equal(generator.coordinates.size(), 46, "reference requests are generated")
 	for index in 45:
 		var coordinate = generator.coordinates[index]
@@ -327,7 +327,7 @@ func _test_visible_sectors_materialize_before_external_preload() -> void:
 	view.free()
 
 
-func _test_production_maximum_zoom_uses_bounded_lazy_pending() -> void:
+func _test_large_projection_uses_bounded_lazy_pending() -> void:
 	var controller = Controller.new()
 	var view = View.new()
 	controller.configure(
@@ -336,7 +336,7 @@ func _test_production_maximum_zoom_uses_bounded_lazy_pending() -> void:
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
 	controller.update_view(1000.0, Vector2(1920.0, 1080.0))
-	assert_equal(controller.load_radii, Vector2i(125, 125), "maximum zoom target")
+	assert_equal(controller.load_radii, Vector2i(67, 38), "large projection target")
 	assert_equal(controller.pending.size(), 256, "pending stays at production cap")
 	controller.process_pending(2)
 	assert_equal(view.active_sector_count(), 2, "frame batch generates two sectors")
@@ -402,15 +402,15 @@ func _test_near_zoom_releases_distant_preloaded_sectors() -> void:
 		view,
 		PositionType.new(Coordinate.new(), Vector2.ZERO)
 	)
-	controller.update_view(94.7, Vector2(1920.0, 1024.0))
+	controller.update_view(94.7, Vector2(1920.0, 1080.0))
 	controller.process_pending(controller.pending.size())
-	controller.update_view(30.0, Vector2(1920.0, 1024.0))
+	controller.update_view(30.0, Vector2(1920.0, 1080.0))
 	controller.process_pending(controller.pending.size())
-	assert_equal(controller.load_radii, Vector2i(1, 1), "near zoom target is three by three")
+	assert_equal(controller.load_radii, Vector2i(2, 2), "near zoom target covers nine viewports")
 	assert_equal(
 		view.active_sector_count(),
-		9,
-		"near zoom retains only nine sectors instead of the reported 169"
+		25,
+		"near zoom retains the sectors needed by the nine viewport areas"
 	)
 	controller.free()
 	view.free()
@@ -523,8 +523,9 @@ func _test_invalid_visual_type_materializes_with_safe_fallback() -> void:
 
 func _unscaled_stream_settings():
 	var custom = Settings.duplicate(true)
-	custom.stream_render_scale = 1.0
+	custom.stream_viewport_grid_size = 1
 	custom.stream_load_margin = 1
+	custom.stream_max_aspect_ratio = 1.0
 	custom.stream_max_pending_sectors = 512
 	return custom
 

@@ -43,7 +43,7 @@ func run() -> void:
 	_test_hud_reports_map_stats_and_zoom()
 	_test_reference_zoom_refreshes_stream_coverage()
 	_test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage()
-	_test_maximum_zoom_routes_scaled_lazy_coverage()
+	_test_maximum_zoom_routes_fixed_grid_coverage()
 
 
 func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> void:
@@ -147,19 +147,19 @@ func _test_reference_zoom_refreshes_stream_coverage() -> void:
 	assert_equal(camera.size, 300.0, "coverage test uses its reference zoom")
 	assert_equal(
 		stream.load_radii,
-		Vector2i(14, 14),
+		Vector2i(20, 12),
 		"demo forwards reference 16:9 coverage"
 	)
 	demo.free()
 
 
-func _test_maximum_zoom_routes_scaled_lazy_coverage() -> void:
+func _test_maximum_zoom_routes_fixed_grid_coverage() -> void:
 	var demo = Demo.instantiate()
 	var stream = demo.get_node("SectorStreamController")
-	demo.get_node("MapCamera").size = 1000.0
+	demo.get_node("MapCamera").size = Settings.camera_max_zoom
 	demo._refresh_stream_coverage(Vector2(1920.0, 1080.0))
-	assert_equal(stream.load_radii, Vector2i(125, 125), "demo routes max zoom radii")
-	assert_equal(stream.pending.size(), 256, "demo pending remains bounded")
+	assert_equal(stream.load_radii, Vector2i(7, 4), "demo routes max zoom radii")
+	assert_equal(stream.pending.size(), 135, "demo queues the complete nine viewport grid")
 	demo.free()
 
 
@@ -179,13 +179,13 @@ func _test_viewport_resize_signal_refreshes_portrait_and_ultrawide_coverage() ->
 	demo._refresh_stream_coverage(Vector2(900.0, 1600.0))
 	assert_equal(
 		stream.load_radii,
-		Vector2i(8, 14),
+		Vector2i(7, 12),
 		"portrait resize provides portrait stream coverage"
 	)
 	demo._refresh_stream_coverage(Vector2(3200.0, 900.0))
 	assert_equal(
 		stream.load_radii,
-		Vector2i(14, 14),
+		Vector2i(40, 12),
 		"ultrawide resize refreshes stream coverage"
 	)
 	demo.free()
