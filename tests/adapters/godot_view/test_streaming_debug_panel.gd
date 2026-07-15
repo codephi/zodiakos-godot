@@ -53,6 +53,10 @@ func run() -> void:
 		"active_sectors": 25,
 		"pending_sectors": 256,
 		"systems": 11,
+		"stellar_lod_mode": &"stellar_glow",
+		"stellar_points_2d": 0,
+		"stellar_glow_instances": 11,
+		"stellar_glow_pending": 2,
 	})
 	assert_true(panel.metrics_label.text.contains("Camera zoom: 30.0"), "panel shows camera zoom")
 	assert_true(
@@ -61,6 +65,8 @@ func run() -> void:
 	)
 	assert_true(panel.metrics_label.text.contains("Target: 10395"), "panel shows target")
 	assert_true(panel.metrics_label.text.contains("Pending: 256"), "panel shows pending")
+	assert_true(panel.metrics_label.text.contains("Stellar LOD: stellar_glow"), "panel shows stellar LOD")
+	assert_true(panel.metrics_label.text.contains("Glow instances: 11"), "panel shows glow count")
 
 	panel.show_validation_error("synthetic error")
 	assert_equal(panel.error_label.text, "synthetic error", "panel shows validation error")

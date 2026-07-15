@@ -1,7 +1,7 @@
 extends Node3D
 
 const CameraType = preload("res://scripts/adapters/godot_view/map_camera_controller.gd")
-const ViewType = preload("res://scripts/adapters/godot_view/star_field_view.gd")
+const ViewType = preload("res://scripts/adapters/godot_view/hybrid_star_field_view.gd")
 const StreamType = preload("res://scripts/adapters/godot_view/sector_stream_controller.gd")
 const StreamingDebugPanelType = preload(
 	"res://scripts/adapters/godot_view/streaming_debug_panel.gd"
@@ -40,6 +40,12 @@ const LoadSystemComposition = preload(
 )
 const ProceduralSystemFactory = preload(
 	"res://scripts/domain/universe/procedural_system_factory.gd"
+)
+const StellarPhysicsModel = preload(
+	"res://scripts/domain/universe/stellar_physics_model.gd"
+)
+const StellarLightProfileService = preload(
+	"res://scripts/application/rendering/stellar_light_profile_service.gd"
 )
 const DefaultSettings = preload("res://config/game_settings.tres")
 
@@ -109,6 +115,7 @@ func _add_environment() -> void:
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = runtime_settings.map_ambient_light_color
 	environment.ambient_light_energy = runtime_settings.map_ambient_light_energy
+	environment.glow_enabled = true
 	world.environment = environment
 	add_child(world)
 
@@ -151,6 +158,14 @@ func _configure_universe_stream() -> void:
 		ProceduralSystemFactory.new(),
 		universe_generator.identity,
 		composition_metrics
+	)
+	sector_view.configure_glow(
+		StellarLightProfileService.new(
+			composition_loader,
+			StellarPhysicsModel.new(runtime_settings),
+			runtime_settings,
+			universe_generator.identity
+		)
 	)
 	sector_source = LoadGalaxySector.new(catalog_repository, universe_generator)
 	map_camera.set_logical_position(
@@ -276,6 +291,7 @@ func _refresh_stream_coverage(viewport_size := Vector2.ZERO) -> void:
 		next_viewport_size = viewport.get_visible_rect().size
 	_last_viewport_size = next_viewport_size
 	stream.update_view(map_camera.size, next_viewport_size)
+	sector_view.update_camera(_camera_global_position(), map_camera.size, next_viewport_size)
 	_refresh_stream_debug_metrics()
 	_refresh_minimap_state(next_viewport_size)
 
@@ -375,6 +391,7 @@ func _copy_stream_tuning(source, target) -> void:
 func _refresh_stream_debug_metrics() -> void:
 	if debug_panel == null or stream == null or sector_view == null:
 		return
+	var stellar_metrics: Dictionary = sector_view.renderer_metrics()
 	debug_panel.update_metrics({
 		"camera_zoom": map_camera.size,
 		"effective_preload_zoom": stream.projection.effective_preload_zoom(
@@ -386,4 +403,8 @@ func _refresh_stream_debug_metrics() -> void:
 		"active_sectors": sector_view.active_sector_count(),
 		"pending_sectors": stream.pending_sector_count(),
 		"systems": sector_view.system_count(),
+		"stellar_lod_mode": stellar_metrics.mode,
+		"stellar_points_2d": sector_view.system_count() - int(stellar_metrics.glow_instances),
+		"stellar_glow_instances": stellar_metrics.glow_instances,
+		"stellar_glow_pending": stellar_metrics.pending,
 	})

@@ -203,6 +203,16 @@ func update_metrics(snapshot: Dictionary) -> void:
 		int(snapshot.get("pending_sectors", 0)),
 		int(snapshot.get("systems", 0)),
 	]
+	if snapshot.has("stellar_lod_mode"):
+		metrics_label.text += (
+			"\nStellar LOD: %s\n2D points: %d\nGlow instances: %d\nGlow pending: %d"
+			% [
+				snapshot.stellar_lod_mode,
+				int(snapshot.get("stellar_points_2d", 0)),
+				int(snapshot.get("stellar_glow_instances", 0)),
+				int(snapshot.get("stellar_glow_pending", 0)),
+			]
+		)
 
 
 func show_validation_error(message: String) -> void:

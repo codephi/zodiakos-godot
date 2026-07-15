@@ -7,6 +7,7 @@ const RepositoryPort = preload(
 	"res://scripts/application/ports/scientific_catalog_repository.gd"
 )
 const Settings = preload("res://config/game_settings.tres")
+const HybridView = preload("res://scripts/adapters/godot_view/hybrid_star_field_view.gd")
 
 class InvalidCatalogRepository:
 	extends RepositoryPort
@@ -57,6 +58,8 @@ func _test_composes_infinite_map_and_progressively_loads_initial_sectors() -> vo
 	assert_true(camera != null, "map camera exists")
 	assert_true(stream != null, "stream controller exists")
 	assert_true(sector_root != null, "sector root exists")
+	assert_true(sector_root is HybridView, "demo uses hybrid data-only renderer")
+	assert_true(sector_root.lod_coordinator != null, "hybrid glow coordinator is configured")
 	assert_true(demo.get_node_or_null("DebugHud/Stats") != null, "debug HUD exists")
 	assert_true(
 		demo.get_node_or_null("DebugHud/StreamingDebugPanel") != null,

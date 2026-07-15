@@ -31,6 +31,10 @@ func _init(configuration = DefaultSettings) -> void:
 	canvas.add_child(point_layer)
 
 
+func _process(_delta: float) -> void:
+	process_glow_pending()
+
+
 func materialize_sector(sector, origin) -> void:
 	render_origin = origin
 	var key: String = sector.coordinate.key()
@@ -99,6 +103,12 @@ func pick_screen(screen_position: Vector2):
 	var world: Vector2 = camera_global + (screen_position - viewport_size * 0.5) * camera_zoom / viewport_size.y
 	var radius: float = settings.stellar_selection_radius_pixels * camera_zoom / viewport_size.y
 	return selection_index.pick(world, radius)
+
+
+func renderer_metrics() -> Dictionary:
+	if lod_coordinator == null:
+		return {"mode": &"points_2d", "glow_instances": 0, "pending": 0}
+	return lod_coordinator.metrics()
 
 
 func active_keys() -> Dictionary:
