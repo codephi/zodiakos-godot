@@ -1,7 +1,7 @@
 # Hybrid Stellar Glow Rendering Design
 
-**Date:** 2026-07-14  
-**Status:** Approved in design conversation; awaiting written-spec review  
+**Date:** 2026-07-14
+**Status:** Approved in design conversation; awaiting written-spec review
 **Scope:** Replace per-system 3D nodes with a hybrid 2D and GPU-batched stellar presentation.
 
 ## Problem
