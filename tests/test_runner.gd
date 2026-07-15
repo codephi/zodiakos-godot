@@ -31,6 +31,7 @@ const TEST_SCRIPTS := [
 	preload("res://tests/adapters/godot_view/test_map_camera_controller.gd"),
 	preload("res://tests/adapters/godot_view/test_hybrid_star_field_view.gd"),
 	preload("res://tests/adapters/godot_view/test_stellar_glow_layer.gd"),
+	preload("res://tests/adapters/godot_view/test_stellar_lod_coordinator.gd"),
 	preload("res://tests/adapters/godot_view/test_minimap_controller.gd"),
 	preload("res://tests/adapters/godot_view/test_stellar_minimap.gd"),
 	preload("res://tests/adapters/godot_view/test_sector_streaming.gd"),
