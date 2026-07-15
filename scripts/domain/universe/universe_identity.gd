@@ -84,6 +84,10 @@ func _canonical_value(
 			"system_planet_type_weights",
 			_integers(settings.system_planet_type_weights)
 		),
+		_pair("stellar_physics_model_version", str(settings.stellar_physics_model_version)),
+		_pair("stellar_spectral_profiles", _dictionary(settings.stellar_spectral_profiles)),
+		_pair("stellar_evolution_stage_weights", _dictionary(settings.stellar_evolution_stage_weights)),
+		_pair("stellar_variability_profiles", _dictionary(settings.stellar_variability_profiles)),
 	]
 	var encoded := PackedStringArray()
 	for field in fields:
@@ -122,6 +126,10 @@ func _take_configuration_snapshot(configuration: Resource) -> Dictionary:
 		"system_max_minor_bodies": int(configuration.system_max_minor_bodies),
 		"system_planet_types": configuration.system_planet_types.duplicate(),
 		"system_planet_type_weights": configuration.system_planet_type_weights.duplicate(),
+		"stellar_physics_model_version": int(configuration.stellar_physics_model_version),
+		"stellar_spectral_profiles": configuration.stellar_spectral_profiles.duplicate(true),
+		"stellar_evolution_stage_weights": configuration.stellar_evolution_stage_weights.duplicate(true),
+		"stellar_variability_profiles": configuration.stellar_variability_profiles.duplicate(true),
 	}
 
 
@@ -147,3 +155,14 @@ func _integers(values: Array[int]) -> String:
 		var text := str(item)
 		encoded.append("%d:%s" % [text.length(), text])
 	return "".join(encoded)
+
+
+func _dictionary(value: Dictionary) -> String:
+	var keys := value.keys()
+	keys.sort_custom(func(left, right): return str(left) < str(right))
+	var encoded := PackedStringArray()
+	for key in keys:
+		var item = value[key]
+		var item_text := _dictionary(item) if item is Dictionary else str(item)
+		encoded.append("%s=%s" % [str(key), item_text])
+	return "{" + ",".join(encoded) + "}"

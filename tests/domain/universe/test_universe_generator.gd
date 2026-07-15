@@ -31,6 +31,8 @@ func run() -> void:
 	_test_stream_viewport_grid_does_not_version_universe()
 	_test_fixed_preload_settings_do_not_version_universe()
 	_test_minimap_settings_do_not_version_universe()
+	_test_stellar_presentation_does_not_version_universe()
+	_test_stellar_physics_versions_universe()
 	_test_stream_pending_cap_does_not_version_universe()
 	_test_procedural_candidates_are_deterministic_and_bounded()
 	_test_candidate_generation_does_not_touch_global_random_state()
@@ -66,6 +68,30 @@ func _test_universe_identity_is_stable_and_versioned() -> void:
 		first,
 		Identity.new(101, 7, Metadata.new(99, 2, 3), Settings).value,
 		"schema version does not version the galaxy"
+	)
+
+
+func _test_stellar_presentation_does_not_version_universe() -> void:
+	var baseline = Identity.new(101, 7, Metadata.new(1, 2, 3), Settings).value
+	var changed = Settings.duplicate(true)
+	changed.stellar_lod_glow_enter_zoom = 180.0
+	changed.stellar_lod_glow_exit_zoom = 240.0
+	changed.stellar_lod_safety_margin_ratio = 0.75
+	changed.stellar_glow_profiles_per_frame = 64
+	assert_equal(
+		Identity.new(101, 7, Metadata.new(1, 2, 3), changed).value,
+		baseline,
+		"stellar presentation settings do not version the universe"
+	)
+
+
+func _test_stellar_physics_versions_universe() -> void:
+	var baseline = Identity.new(101, 7, Metadata.new(1, 2, 3), Settings).value
+	var changed = Settings.duplicate(true)
+	changed.stellar_physics_model_version += 1
+	assert_true(
+		Identity.new(101, 7, Metadata.new(1, 2, 3), changed).value != baseline,
+		"stellar physics version changes universe identity"
 	)
 
 

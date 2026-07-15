@@ -82,6 +82,25 @@ const SYSTEM_MAX_MOONS_PER_PLANET_LIMIT := 3999
 @export var minimap_cache_sector_limit: int
 @export var minimap_query_debounce_seconds: float
 
+@export_category("Stellar Rendering")
+@export var stellar_lod_glow_enter_zoom: float
+@export var stellar_lod_glow_exit_zoom: float
+@export var stellar_lod_safety_margin_ratio: float
+@export var stellar_glow_profiles_per_frame: int
+@export var stellar_selection_radius_pixels: float
+@export var stellar_point_size_range: Vector2
+@export var stellar_glow_scale_range: Vector2
+@export var stellar_glow_visual_period_range: Vector2
+@export var stellar_stable_pulse_amplitude_range: Vector2
+@export var stellar_variable_pulse_amplitude_max: float
+@export var stellar_glow_intensity: float
+
+@export_category("Stellar Physics")
+@export var stellar_physics_model_version: int
+@export var stellar_spectral_profiles: Dictionary
+@export var stellar_evolution_stage_weights: Dictionary
+@export var stellar_variability_profiles: Dictionary
+
 @export_category("Visual Palette")
 @export var neutral_owner_color: Color
 @export var ship_styles: Dictionary
@@ -141,6 +160,8 @@ func validation_errors() -> PackedStringArray:
 	_validate_system_composition(errors)
 	_validate_performance_metrics(errors)
 	_validate_minimap(errors)
+	_validate_stellar_rendering(errors)
+	_validate_stellar_physics(errors)
 	_validate_visuals(errors)
 	_validate_demo(errors)
 	return errors
@@ -319,6 +340,51 @@ func _validate_minimap(errors: PackedStringArray) -> void:
 		or minimap_query_debounce_seconds < 0.0
 	):
 		errors.append("minimap_query_debounce_seconds must be nonnegative")
+
+
+func _validate_stellar_rendering(errors: PackedStringArray) -> void:
+	_require_nonnegative(errors, "stellar_lod_glow_enter_zoom", stellar_lod_glow_enter_zoom)
+	_require_nonnegative(errors, "stellar_lod_glow_exit_zoom", stellar_lod_glow_exit_zoom)
+	if stellar_lod_glow_enter_zoom >= stellar_lod_glow_exit_zoom:
+		errors.append("stellar LOD zooms must satisfy entry < exit")
+	_require_nonnegative(errors, "stellar_lod_safety_margin_ratio", stellar_lod_safety_margin_ratio)
+	_require_positive(errors, "stellar_glow_profiles_per_frame", stellar_glow_profiles_per_frame)
+	_require_positive(errors, "stellar_selection_radius_pixels", stellar_selection_radius_pixels)
+	for entry in [
+		["stellar_point_size_range", stellar_point_size_range],
+		["stellar_glow_scale_range", stellar_glow_scale_range],
+		["stellar_glow_visual_period_range", stellar_glow_visual_period_range],
+		["stellar_stable_pulse_amplitude_range", stellar_stable_pulse_amplitude_range],
+	]:
+		var value: Vector2 = entry[1]
+		if value.x < 0.0 or value.x > value.y or not value.is_finite():
+			errors.append("%s must contain an ordered finite range" % entry[0])
+	if stellar_stable_pulse_amplitude_range.y > 1.0:
+		errors.append("stellar stable pulse amplitudes must be at most 1")
+	if stellar_variable_pulse_amplitude_max < 0.0 or stellar_variable_pulse_amplitude_max > 1.0:
+		errors.append("stellar_variable_pulse_amplitude_max must be between 0 and 1")
+	_require_positive(errors, "stellar_glow_intensity", stellar_glow_intensity)
+
+
+func _validate_stellar_physics(errors: PackedStringArray) -> void:
+	_require_positive(errors, "stellar_physics_model_version", stellar_physics_model_version)
+	for spectral_class in [&"O", &"B", &"A", &"F", &"G", &"K", &"M"]:
+		if not stellar_spectral_profiles.has(spectral_class):
+			errors.append("stellar_spectral_profiles missing class: %s" % spectral_class)
+			continue
+		var profile: Dictionary = stellar_spectral_profiles[spectral_class]
+		for key in ["temperature_min_k", "temperature_max_k", "mass_min_solar", "mass_max_solar"]:
+			if not profile.has(key) or float(profile[key]) <= 0.0:
+				errors.append("stellar spectral class %s has invalid %s" % [spectral_class, key])
+		if (
+			profile.has("temperature_min_k") and profile.has("temperature_max_k")
+			and float(profile.temperature_min_k) > float(profile.temperature_max_k)
+		):
+			errors.append("stellar spectral temperatures must be ordered: %s" % spectral_class)
+	if stellar_evolution_stage_weights.is_empty():
+		errors.append("stellar_evolution_stage_weights must not be empty")
+	if stellar_variability_profiles.is_empty():
+		errors.append("stellar_variability_profiles must not be empty")
 
 
 func _validate_visuals(errors: PackedStringArray) -> void:

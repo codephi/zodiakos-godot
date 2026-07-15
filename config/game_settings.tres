@@ -12,10 +12,7 @@ camera_drag_threshold_pixels = 4.0
 stream_initial_load_radii = Vector2i(2, 2)
 stream_max_pending_sectors = 256
 stream_viewport_grid_size = 3
-stream_use_fixed_preload_zoom = false
 stream_fixed_preload_zoom = 1000.0
-stream_load_margin = 0
-stream_unload_margin = 0
 stream_min_aspect_ratio = 0.25
 stream_max_aspect_ratio = 4.0
 stream_sectors_per_frame = 2
@@ -60,6 +57,32 @@ minimap_density_grid_resolution = 64
 minimap_density_cells_per_frame = 128
 minimap_cache_sector_limit = 512
 minimap_query_debounce_seconds = 0.1
+stellar_lod_glow_enter_zoom = 200.0
+stellar_lod_glow_exit_zoom = 220.0
+stellar_lod_safety_margin_ratio = 0.5
+stellar_glow_profiles_per_frame = 512
+stellar_selection_radius_pixels = 12.0
+stellar_point_size_range = Vector2(1.5, 4)
+stellar_glow_scale_range = Vector2(0.6, 2.5)
+stellar_glow_visual_period_range = Vector2(2.5, 8)
+stellar_stable_pulse_amplitude_range = Vector2(0.01, 0.03)
+stellar_variable_pulse_amplitude_max = 0.12
+stellar_glow_intensity = 1.8
+stellar_physics_model_version = 1
+stellar_spectral_profiles = {
+&"A": {"mass_max_solar": 2.1, "mass_min_solar": 1.4, "temperature_max_k": 10000.0, "temperature_min_k": 7500.0},
+&"B": {"mass_max_solar": 16.0, "mass_min_solar": 2.1, "temperature_max_k": 30000.0, "temperature_min_k": 10000.0},
+&"F": {"mass_max_solar": 1.4, "mass_min_solar": 1.04, "temperature_max_k": 7500.0, "temperature_min_k": 6000.0},
+&"G": {"mass_max_solar": 1.04, "mass_min_solar": 0.8, "temperature_max_k": 6000.0, "temperature_min_k": 5200.0},
+&"K": {"mass_max_solar": 0.8, "mass_min_solar": 0.45, "temperature_max_k": 5200.0, "temperature_min_k": 3700.0},
+&"M": {"mass_max_solar": 0.45, "mass_min_solar": 0.08, "temperature_max_k": 3700.0, "temperature_min_k": 2400.0},
+&"O": {"mass_max_solar": 60.0, "mass_min_solar": 16.0, "temperature_max_k": 50000.0, "temperature_min_k": 30000.0}
+}
+stellar_evolution_stage_weights = {&"giant": 6, &"main_sequence": 90, &"red_giant": 3, &"white_dwarf": 1}
+stellar_variability_profiles = {
+&"evolved": {"amplitude_max": 0.3, "amplitude_min": 0.04, "period_max_days": 300.0, "period_min_days": 10.0},
+&"stable": {"amplitude_max": 0.03, "amplitude_min": 0.01, "period_max_days": 40.0, "period_min_days": 5.0}
+}
 neutral_owner_color = Color(0.5, 0.5, 0.5, 1)
 ship_styles = {
 &"colony": {

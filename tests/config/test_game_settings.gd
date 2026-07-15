@@ -61,6 +61,14 @@ func run() -> void:
 	assert_equal(Settings.minimap_density_cells_per_frame, 128, "minimap cell budget")
 	assert_equal(Settings.minimap_cache_sector_limit, 512, "minimap cache limit")
 	assert_equal(Settings.minimap_query_debounce_seconds, 0.1, "minimap debounce")
+	assert_equal(Settings.stellar_lod_glow_enter_zoom, 200.0, "stellar glow entry")
+	assert_equal(Settings.stellar_lod_glow_exit_zoom, 220.0, "stellar glow exit")
+	assert_equal(Settings.stellar_lod_safety_margin_ratio, 0.5, "stellar safety margin")
+	assert_equal(Settings.stellar_glow_profiles_per_frame, 512, "stellar profile budget")
+	assert_equal(Settings.stellar_selection_radius_pixels, 12.0, "stellar selection radius")
+	assert_equal(Settings.stellar_glow_visual_period_range, Vector2(2.5, 8.0), "pulse period range")
+	assert_equal(Settings.stellar_physics_model_version, 1, "stellar physics version")
+	assert_true(Settings.stellar_spectral_profiles.has(&"G"), "spectral profiles include G")
 	assert_equal(
 		Settings.system_planet_types,
 		[&"rocky", &"gas", &"ice", &"volcanic"],
@@ -268,6 +276,19 @@ func run() -> void:
 		&"minimap_query_debounce_seconds",
 		NAN,
 		"minimap_query_debounce_seconds must be nonnegative"
+	)
+	_assert_validation_error(
+		&"stellar_glow_profiles_per_frame",
+		0,
+		"stellar_glow_profiles_per_frame must be positive"
+	)
+	var invalid_stellar_order = Settings.duplicate(true)
+	invalid_stellar_order.stellar_lod_glow_enter_zoom = 220.0
+	assert_true(
+		invalid_stellar_order.validation_errors().has(
+			"stellar LOD zooms must satisfy entry < exit"
+		),
+		"stellar LOD thresholds are ordered"
 	)
 	var invalid_minimap_order = Settings.duplicate(true)
 	invalid_minimap_order.minimap_exact_sector_limit = 4096
