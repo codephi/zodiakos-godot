@@ -8,6 +8,7 @@ const Mixer = preload("res://scripts/domain/universe/seed_mixer.gd")
 const Naming = preload("res://scripts/domain/universe/dynamic_naming_service.gd")
 const Orbit = preload("res://scripts/domain/universe/orbit_definition.gd")
 const StellarSystem = preload("res://scripts/domain/universe/stellar_system_definition.gd")
+const StellarPhysics = preload("res://scripts/domain/universe/stellar_physics_model.gd")
 
 const MINOR_TYPE_COUNT := 6
 
@@ -81,19 +82,22 @@ func _create_stars(
 	for index in star_count:
 		var star_id := StringName("%s:star:%d" % [system.id, index])
 		var parent_id := StringName() if index == 0 else primary_id
+		var visual_type: StringName = _weighted_type(
+			_rng(system.id, identity, ":star-type:%d" % index),
+			snapshot.universe_visual_types,
+			snapshot.universe_visual_type_weights
+		)
 		stars.append(
 			Body.new(
 				star_id,
 				&"star",
 				_naming.star_designation(system_designation, index),
 				"",
-				_weighted_type(
-					_rng(system.id, identity, ":star-type:%d" % index),
-					snapshot.universe_visual_types,
-					snapshot.universe_visual_type_weights
-				),
+				visual_type,
 				parent_id,
-				{}
+				StellarPhysics.new().complete_star_properties(
+					star_id, visual_type, {}, identity
+				)
 			)
 		)
 		if index > 0:
